@@ -17,22 +17,16 @@ const colorMap = {
   blue: {
     iconBg: 'bg-accent-blue/10',
     iconText: 'text-accent-blue',
-    bar: 'bg-accent-blue',
-    glow: 'animate-progress-glow',
     delta: 'bg-accent-blue/10 text-accent-blue',
   },
   green: {
     iconBg: 'bg-accent-green/10',
     iconText: 'text-accent-green',
-    bar: 'bg-accent-green',
-    glow: '',
     delta: 'bg-accent-green/10 text-accent-green',
   },
   amber: {
     iconBg: 'bg-accent-amber/10',
     iconText: 'text-accent-amber',
-    bar: 'bg-accent-amber',
-    glow: '',
     delta: 'bg-accent-amber/10 text-accent-amber',
   },
 };
@@ -67,10 +61,6 @@ export function KPICard({ label, value, icon: Icon, color, delta, index = 0 }: K
 
       <p className="text-4xl font-bold text-white">{value}</p>
       <p className="mt-1 text-sm text-slate-400">{label}</p>
-
-      <div className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-bg-deep">
-        <div className={cn('h-full w-3/4 rounded-full', colors.bar, colors.glow)} />
-      </div>
     </motion.div>
   );
 }

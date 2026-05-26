@@ -6,7 +6,7 @@ export async function fetchLeadsFromGoogleSheet(): Promise<Lead[]> {
   const sheetId = process.env.GOOGLE_SHEET_ID;
   if (!sheetId) {
     throw new Error(
-      'GOOGLE_SHEET_ID is not set. Add it to .env.local (see .env.example).'
+      'GOOGLE_SHEET_ID is not set. Add it to .env.local (local) or your hosting environment variables (production).'
     );
   }
 
