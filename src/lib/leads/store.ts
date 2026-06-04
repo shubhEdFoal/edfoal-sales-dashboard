@@ -7,14 +7,54 @@ const DATA_DIR = path.join(process.cwd(), 'data');
 const LEADS_FILE = path.join(DATA_DIR, 'leads.json');
 const REDIS_KEY = 'edfoal:leads';
 
+const globalForLeads = globalThis as typeof globalThis & {
+  __edfoalLeads?: Lead[];
+};
+
+let fileStoreDisabled = false;
+
+/** Vercel/serverless has a read-only filesystem — cannot create /var/task/data */
+function isServerless(): boolean {
+  if (fileStoreDisabled) return true;
+  const cwd = process.cwd();
+  return (
+    process.env.VERCEL === '1' ||
+    Boolean(process.env.AWS_LAMBDA_FUNCTION_NAME) ||
+    Boolean(process.env.NETLIFY) ||
+    cwd.startsWith('/var/task')
+  );
+}
+
 function useUpstash(): boolean {
   return Boolean(
     process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN
   );
 }
 
+function useFileStore(): boolean {
+  return !isServerless() && !useUpstash();
+}
+
+type StorageBackend = 'upstash' | 'file' | 'memory';
+
+function storageBackend(): StorageBackend {
+  if (useUpstash()) return 'upstash';
+  if (useFileStore()) return 'file';
+  return 'memory';
+}
+
 async function ensureDataDir(): Promise<void> {
-  await mkdir(DATA_DIR, { recursive: true });
+  if (!useFileStore()) return;
+  try {
+    await mkdir(DATA_DIR, { recursive: true });
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === 'ENOENT' || code === 'EACCES' || code === 'EROFS') {
+      fileStoreDisabled = true;
+      return;
+    }
+    throw err;
+  }
 }
 
 async function readFromFile(): Promise<Lead[]> {
@@ -29,8 +69,34 @@ async function readFromFile(): Promise<Lead[]> {
 }
 
 async function writeToFile(leads: Lead[]): Promise<void> {
+  if (!useFileStore()) {
+    writeToMemory(leads);
+    return;
+  }
   await ensureDataDir();
-  await writeFile(LEADS_FILE, JSON.stringify(leads, null, 2), 'utf-8');
+  if (!useFileStore()) {
+    writeToMemory(leads);
+    return;
+  }
+  try {
+    await writeFile(LEADS_FILE, JSON.stringify(leads, null, 2), 'utf-8');
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === 'ENOENT' || code === 'EACCES' || code === 'EROFS') {
+      fileStoreDisabled = true;
+      writeToMemory(leads);
+      return;
+    }
+    throw err;
+  }
+}
+
+function readFromMemory(): Lead[] {
+  return globalForLeads.__edfoalLeads ?? [];
+}
+
+function writeToMemory(leads: Lead[]): void {
+  globalForLeads.__edfoalLeads = leads;
 }
 
 async function upstashCommand(command: (string | number)[]): Promise<unknown> {
@@ -68,16 +134,28 @@ async function writeToUpstash(leads: Lead[]): Promise<void> {
 }
 
 async function readAll(): Promise<Lead[]> {
-  if (useUpstash()) return readFromUpstash();
-  return readFromFile();
+  switch (storageBackend()) {
+    case 'upstash':
+      return readFromUpstash();
+    case 'file':
+      return readFromFile();
+    default:
+      return readFromMemory();
+  }
 }
 
 async function writeAll(leads: Lead[]): Promise<void> {
-  if (useUpstash()) {
-    await writeToUpstash(leads);
-    return;
+  switch (storageBackend()) {
+    case 'upstash':
+      await writeToUpstash(leads);
+      break;
+    case 'file':
+      await writeToFile(leads);
+      break;
+    default:
+      writeToMemory(leads);
+      break;
   }
-  await writeToFile(leads);
 }
 
 export async function getAllLeads(): Promise<Lead[]> {
