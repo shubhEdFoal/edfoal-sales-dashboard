@@ -9,6 +9,7 @@ import type {
   Lead,
   LeadStatus,
 } from '@/data/leads';
+import { EDFOAL_ICP } from '@/config/edfoal-icp';
 import { cn } from '@/lib/utils';
 
 interface AddLeadModalProps {
@@ -198,7 +199,7 @@ export function AddLeadModal({ open, onClose, onSave }: AddLeadModalProps) {
                 <div>
                   <h2 className="text-lg font-semibold text-white">Add new lead</h2>
                   <p className="text-xs text-slate-400">
-                    A new row will be added to your sheet when you save.
+                    The lead will be saved in the dashboard immediately.
                   </p>
                 </div>
               </div>
@@ -266,7 +267,7 @@ export function AddLeadModal({ open, onClose, onSave }: AddLeadModalProps) {
                     type="text"
                     value={form.targetSegment}
                     onChange={(e) => update('targetSegment', e.target.value)}
-                    placeholder="EdTech / SaaS / Agency"
+                    placeholder={EDFOAL_ICP.targetSegmentExamples.join(', ')}
                     className={FIELD_CLS}
                   />
                 </FieldLabel>

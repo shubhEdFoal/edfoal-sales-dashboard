@@ -18,6 +18,7 @@ import { Header, type NavLink } from '@/components/layout/Header';
 import { GlowButton } from '@/components/ui/GlowButton';
 import type { Lead } from '@/data/leads';
 import { downloadLeadsCSV } from '@/lib/export-csv';
+import { computeFunnel, computeKPI } from '@/lib/sheets/kpi';
 import type { FunnelStage, LeadKPI } from '@/lib/sheets/kpi';
 
 interface LeadsApiResponse {
@@ -45,6 +46,7 @@ export default function Home() {
   const [kpi, setKpi] = useState<LeadKPI | null>(null);
   const [funnel, setFunnel] = useState<FunnelStage[]>([]);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
@@ -53,15 +55,85 @@ export default function Home() {
   const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [generateLeadOpen, setGenerateLeadOpen] = useState(false);
 
-  const handleDeleteLead = useCallback((lead: Lead) => {
-    setLeads((prev) => prev.filter((l) => l.id !== lead.id));
-    setSelectedLead((current) => (current?.id === lead.id ? null : current));
-  }, []);
+  const handleDeleteLead = useCallback(
+    async (lead: Lead) => {
+      try {
+        const res = await fetch(`/api/leads?id=${encodeURIComponent(lead.id)}`, {
+          method: 'DELETE',
+        });
+        const data = (await res.json()) as LeadsApiResponse;
+        if (!res.ok) {
+          throw new Error(data.error ?? 'Failed to delete lead');
+        }
+        setLeads(data.leads);
+        setKpi(data.kpi);
+        setFunnel(data.funnel);
+        setSelectedLead((current) => (current?.id === lead.id ? null : current));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to delete lead');
+      }
+    },
+    []
+  );
 
   const handleExportCSV = useCallback(() => {
     if (leads.length === 0) return;
     downloadLeadsCSV(leads);
   }, [leads]);
+
+  const applyLeadsResponse = useCallback((data: LeadsApiResponse) => {
+    setLeads(data.leads);
+    setKpi(data.kpi);
+    setFunnel(data.funnel);
+  }, []);
+
+  const loadLeads = useCallback(
+    async (syncFromSheet = false, options?: { initial?: boolean }) => {
+      if (options?.initial) setLoading(true);
+      else setRefreshing(true);
+      setError(null);
+
+      try {
+        const res = await fetch(
+          `/api/leads?sync=${syncFromSheet ? '1' : '0'}&_=${Date.now()}`,
+          { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } }
+        );
+        const data = (await res.json()) as LeadsApiResponse;
+
+        if (!res.ok) {
+          throw new Error(data.error ?? 'Failed to load leads');
+        }
+
+        applyLeadsResponse(data);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Failed to load leads');
+      } finally {
+        setLoading(false);
+        setRefreshing(false);
+      }
+    },
+    [applyLeadsResponse]
+  );
+
+  const pollForNewLeads = useCallback(async () => {
+    const startCount = leads.length;
+    const delays = [5000, 20000, 20000, 20000, 20000, 20000];
+    for (const delay of delays) {
+      await new Promise((r) => setTimeout(r, delay));
+      try {
+        const res = await fetch(`/api/leads?sync=1&_=${Date.now()}`, {
+          cache: 'no-store',
+        });
+        const data = (await res.json()) as LeadsApiResponse;
+        if (res.ok) {
+          applyLeadsResponse(data);
+          if (data.leads.length > startCount) return;
+        }
+      } catch {
+        // keep polling
+      }
+    }
+  }, [applyLeadsResponse, leads.length]);
 
   const handleSaveLead = useCallback(
     async (lead: Lead): Promise<{ ok: boolean; error?: string }> => {
@@ -71,11 +143,18 @@ export default function Home() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(lead),
         });
-        const data = (await res.json()) as { ok?: boolean; error?: string };
+        const data = (await res.json()) as LeadsApiResponse & {
+          ok?: boolean;
+          error?: string;
+        };
         if (!res.ok || data.ok === false) {
           return { ok: false, error: data.error ?? 'Save failed.' };
         }
-        setLeads((prev) => [lead, ...prev]);
+        if (data.leads) {
+          applyLeadsResponse(data);
+        } else {
+          await loadLeads(true);
+        }
         return { ok: true };
       } catch (err) {
         return {
@@ -84,33 +163,11 @@ export default function Home() {
         };
       }
     },
-    []
+    [applyLeadsResponse, loadLeads]
   );
 
-  const loadLeads = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const res = await fetch('/api/leads');
-      const data = (await res.json()) as LeadsApiResponse;
-
-      if (!res.ok) {
-        throw new Error(data.error ?? 'Failed to load leads');
-      }
-
-      setLeads(data.leads);
-      setKpi(data.kpi);
-      setFunnel(data.funnel);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load leads');
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
   useEffect(() => {
-    void loadLeads();
+    void loadLeads(true, { initial: true });
   }, [loadLeads]);
 
   const filteredLeads = useMemo(() => {
@@ -129,8 +186,12 @@ export default function Home() {
   }, [leads, searchTerm, statusFilter, healthFilter]);
 
   const showLoadingSkeleton = loading && leads.length === 0;
+  const displayKpi = kpi ?? computeKPI(leads);
+  const displayFunnel = funnel.length > 0 ? funnel : computeFunnel(leads);
   const emptyTableMessage =
-    leads.length === 0 ? 'No lead rows in your Google Sheet yet' : undefined;
+    leads.length === 0
+      ? 'No leads yet — use Add Lead or Generate Lead to get started'
+      : undefined;
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -149,9 +210,10 @@ export default function Home() {
               <GlowButton
                 variant="ghost"
                 icon={RefreshCw}
-                onClick={() => void loadLeads()}
+                onClick={() => void loadLeads(true)}
+                disabled={refreshing}
               >
-                Refresh
+                {refreshing ? 'Refreshing...' : 'Refresh'}
               </GlowButton>
               {activeNav !== 'Settings' && (
                 <GlowButton
@@ -187,12 +249,8 @@ export default function Home() {
 
           {error && (
             <div className="mb-6 rounded-card border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
-              <p className="font-medium">Couldn&apos;t load data from Google Sheets</p>
+              <p className="font-medium">Couldn&apos;t load leads</p>
               <p className="mt-1 text-red-200/80">{error}</p>
-              <p className="mt-2 text-xs text-red-200/60">
-                Set `GOOGLE_SHEET_ID` in `.env.local` and share the sheet as &quot;Anyone with
-                the link&quot; → Viewer.
-              </p>
             </div>
           )}
 
@@ -209,10 +267,10 @@ export default function Home() {
               <div className="h-40 animate-pulse rounded-card border border-border bg-bg-surface" />
               <div className="h-64 animate-pulse rounded-card border border-border bg-bg-surface" />
             </div>
-          ) : activeNav === 'Dashboard' && kpi ? (
+          ) : activeNav === 'Dashboard' ? (
             <div className="space-y-6">
-              <KPISection kpi={kpi} />
-              <PipelineFunnel stages={funnel} />
+              <KPISection kpi={displayKpi} />
+              <PipelineFunnel stages={displayFunnel} />
 
               <FilterBar
                 searchTerm={searchTerm}
@@ -225,7 +283,8 @@ export default function Home() {
 
               {leads.length === 0 && (
                 <div className="rounded-card border border-accent-amber/30 bg-accent-amber/10 px-4 py-3 text-sm text-accent-amber">
-                  Sheet is connected. Add leads starting from row 2 and click Refresh.
+                  No leads in the platform yet. Add one manually or generate leads with the
+                  workflow.
                 </div>
               )}
 
@@ -272,7 +331,10 @@ export default function Home() {
       <GenerateLeadModal
         open={generateLeadOpen}
         onClose={() => setGenerateLeadOpen(false)}
-        onGenerated={() => void loadLeads()}
+        onGenerated={() => {
+          void loadLeads(true);
+          void pollForNewLeads();
+        }}
       />
     </div>
   );

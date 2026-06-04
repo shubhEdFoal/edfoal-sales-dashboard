@@ -24,7 +24,7 @@ export function LeadsTable({ leads, emptyMessage, onView, onDelete }: LeadsTable
         </p>
         <p className="mt-1 text-sm text-slate-500">
           {emptyMessage
-            ? 'Add data to your sheet and click Refresh'
+            ? 'Add a lead or generate leads to populate the table'
             : 'Try adjusting your search or filter criteria'}
         </p>
       </div>

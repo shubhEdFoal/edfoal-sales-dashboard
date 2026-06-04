@@ -27,7 +27,10 @@ export async function POST(req: Request) {
   const count = typeof countRaw === 'number' ? countRaw : parseInt(String(countRaw ?? ''), 10);
 
   if (!businessType) {
-    return NextResponse.json({ error: 'Business type is required.' }, { status: 400 });
+    return NextResponse.json(
+      { error: 'Target company type (ICP) is required — e.g. SaaS Startup, FinTech.' },
+      { status: 400 }
+    );
   }
   if (!location) {
     return NextResponse.json({ error: 'Location is required.' }, { status: 400 });
