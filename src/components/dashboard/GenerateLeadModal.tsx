@@ -239,25 +239,15 @@ export function GenerateLeadModal({
               </button>
             </div>
 
-            <div className="space-y-0 border-b border-border">
-              <div className="bg-accent-blue/5 px-6 py-3">
-                <p className="text-xs text-slate-300">
-                  <span className="font-medium text-accent-blue">EdFoal ICP:</span>{' '}
-                  Prospecting{' '}
-                  <span className="text-white">{EDFOAL_ICP.companyType}</span> buyers — e.g.{' '}
-                  SaaS, FinTech, EdTech — not local retail (spa, salon, cafe, etc.).
-                </p>
-              </div>
-              <div className="flex items-start gap-2 bg-accent-amber/5 px-6 py-3">
-                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-accent-amber" />
-                <p className="text-xs text-slate-300">
-                  <span className="font-medium text-accent-amber">Heads up:</span> Finding
-                  leads takes at least <span className="font-mono font-semibold">5 minutes</span>.
-                  New leads appear in the dashboard once n8n posts to{' '}
-                  <span className="font-mono text-slate-400">/api/leads/ingest</span> — click
-                  Refresh after ~5 minutes.
-                </p>
-              </div>
+            <div className="flex items-start gap-2 border-b border-border bg-accent-amber/5 px-6 py-3">
+              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-accent-amber" />
+              <p className="text-xs text-slate-300">
+                <span className="font-medium text-accent-amber">Heads up:</span> Finding leads
+                takes at least <span className="font-mono font-semibold">5 minutes</span>. New
+                leads appear in the dashboard once n8n posts to{' '}
+                <span className="font-mono text-slate-400">/api/leads/ingest</span> — click
+                Refresh after ~5 minutes.
+              </p>
             </div>
 
             {step === 'choose' && !showAutoView && (
@@ -276,7 +266,7 @@ export function GenerateLeadModal({
                     </p>
                     <p className="mt-1 text-xs text-slate-400">
                       Randomly picks an EdFoal ICP company type (e.g. SaaS, FinTech) and
-                      Indian tech hub \u2014 then starts the search.
+                      a USA or UK market \u2014 then starts the search.
                     </p>
                   </div>
                 </button>
@@ -417,7 +407,7 @@ export function GenerateLeadModal({
                       list="edfoal-icp-locations"
                       value={form.location}
                       onChange={(e) => update('location', e.target.value)}
-                      placeholder="Bangalore, Noida, Mumbai..."
+                      placeholder="London, UK or Austin, USA..."
                       className={FIELD_CLS}
                     />
                     <datalist id="edfoal-icp-locations">

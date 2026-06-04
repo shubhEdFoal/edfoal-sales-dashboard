@@ -13,20 +13,27 @@ async function syncFromSheetIfConfigured(leads: Lead[]): Promise<Lead[]> {
     const fromSheet = await fetchLeadsFromGoogleSheet();
     if (fromSheet.length === 0) return leads;
     const merged = mergeLeads(leads, fromSheet);
-    return saveAllLeads(merged);
-  } catch {
-    return leads;
+    try {
+      await saveAllLeads(merged);
+    } catch {
+      /* serverless: return merged without persisting to disk */
+    }
+    return merged;
+  } catch (err) {
+    if (leads.length > 0) return leads;
+    throw err;
   }
 }
 
 async function loadLeads(syncFromSheet: boolean): Promise<Lead[]> {
-  let leads = await getAllLeads();
-
-  if (syncFromSheet) {
-    return syncFromSheetIfConfigured(leads);
+  let leads: Lead[] = [];
+  try {
+    leads = await getAllLeads();
+  } catch {
+    leads = [];
   }
 
-  if (leads.length === 0) {
+  if (syncFromSheet || leads.length === 0) {
     return syncFromSheetIfConfigured(leads);
   }
 
