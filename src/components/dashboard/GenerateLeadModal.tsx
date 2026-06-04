@@ -11,6 +11,7 @@ import {
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useState } from 'react';
+import { EDFOAL_ICP, EDFOAL_TONE_OPTIONS, type EdfoalOutreachTone } from '@/config/edfoal-icp';
 import { cn } from '@/lib/utils';
 
 interface GenerateLeadModalProps {
@@ -19,58 +20,20 @@ interface GenerateLeadModalProps {
   onGenerated?: () => void;
 }
 
-type Tone = 'Aggressive' | 'Friendly' | 'Professional' | 'Casual';
-
 type FormState = {
   businessType: string;
   location: string;
   count: string;
-  tone: Tone;
+  tone: EdfoalOutreachTone;
 };
 
 type Step = 'choose' | 'manual';
 
-const TONE_OPTIONS: Tone[] = ['Aggressive', 'Friendly', 'Professional', 'Casual'];
-
-const AUTO_BUSINESS_TYPES = [
-  'School',
-  'Cafe',
-  'Clinic',
-  'Gym',
-  'Salon',
-  'Coworking Space',
-  'Bookstore',
-  'Bakery',
-  'Restaurant',
-  'Hotel',
-  'Spa',
-  'Pharmacy',
-  'Boutique',
-  'Real Estate Agency',
-  'Dental Clinic',
-  'Yoga Studio',
-];
-
-const AUTO_LOCATIONS = [
-  'Noida',
-  'Gurgaon',
-  'Delhi',
-  'Mumbai',
-  'Bangalore',
-  'Pune',
-  'Hyderabad',
-  'Chennai',
-  'Kolkata',
-  'Jaipur',
-  'Ahmedabad',
-  'Chandigarh',
-];
-
 const INITIAL_STATE: FormState = {
   businessType: '',
   location: '',
-  count: '5',
-  tone: 'Professional',
+  count: EDFOAL_ICP.defaultLeadCount,
+  tone: EDFOAL_ICP.defaultTone,
 };
 
 const FIELD_CLS =
@@ -105,7 +68,7 @@ interface AutoPick {
   businessType: string;
   location: string;
   count: number;
-  tone: Tone;
+  tone: EdfoalOutreachTone;
 }
 
 export function GenerateLeadModal({
@@ -154,7 +117,7 @@ export function GenerateLeadModal({
       businessType: string;
       location: string;
       count: number;
-      tone: Tone;
+      tone: EdfoalOutreachTone;
     }) => {
       setError(null);
       setSuccess(null);
@@ -170,9 +133,9 @@ export function GenerateLeadModal({
           setError(data.error ?? 'Generation failed.');
         } else {
           setSuccess(
-            `Request sent. The workflow will populate ${payload.count} lead${
+            `Request sent. About ${payload.count} lead${
               payload.count === 1 ? '' : 's'
-            } in your sheet in about 5 minutes. Click Refresh after that to load them.`
+            } will appear in the dashboard in ~5 minutes once n8n posts them. Click Refresh to load.`
           );
           onGenerated?.();
         }
@@ -187,10 +150,10 @@ export function GenerateLeadModal({
 
   const handleAuto = useCallback(() => {
     const pick: AutoPick = {
-      businessType: pickRandom(AUTO_BUSINESS_TYPES),
-      location: pickRandom(AUTO_LOCATIONS),
+      businessType: pickRandom([...EDFOAL_ICP.targetCompanyTypes]),
+      location: pickRandom([...EDFOAL_ICP.targetLocations]),
       count: randomInt(3, 8),
-      tone: pickRandom(TONE_OPTIONS),
+      tone: pickRandom([...EDFOAL_TONE_OPTIONS]),
     };
     setAutoPick(pick);
     void submitToWebhook(pick);
@@ -202,7 +165,7 @@ export function GenerateLeadModal({
       setError(null);
 
       if (form.businessType.trim() === '') {
-        setError('Business type is required.');
+        setError('Target company type is required (e.g. SaaS Startup, FinTech).');
         return;
       }
       if (form.location.trim() === '') {
@@ -276,15 +239,25 @@ export function GenerateLeadModal({
               </button>
             </div>
 
-            <div className="flex items-start gap-2 border-b border-border bg-accent-amber/5 px-6 py-3">
-              <Clock className="mt-0.5 h-4 w-4 shrink-0 text-accent-amber" />
-              <p className="text-xs text-slate-300">
-                <span className="font-medium text-accent-amber">Heads up:</span> Finding
-                leads takes at least <span className="font-mono font-semibold">5 minutes</span>{' '}
-                in both auto and manual modes. You can close this modal after submitting
-                \u2014 the workflow keeps running in the background, and new rows will
-                appear in your sheet when ready. Click Refresh later.
-              </p>
+            <div className="space-y-0 border-b border-border">
+              <div className="bg-accent-blue/5 px-6 py-3">
+                <p className="text-xs text-slate-300">
+                  <span className="font-medium text-accent-blue">EdFoal ICP:</span>{' '}
+                  Prospecting{' '}
+                  <span className="text-white">{EDFOAL_ICP.companyType}</span> buyers — e.g.{' '}
+                  SaaS, FinTech, EdTech — not local retail (spa, salon, cafe, etc.).
+                </p>
+              </div>
+              <div className="flex items-start gap-2 bg-accent-amber/5 px-6 py-3">
+                <Clock className="mt-0.5 h-4 w-4 shrink-0 text-accent-amber" />
+                <p className="text-xs text-slate-300">
+                  <span className="font-medium text-accent-amber">Heads up:</span> Finding
+                  leads takes at least <span className="font-mono font-semibold">5 minutes</span>.
+                  New leads appear in the dashboard once n8n posts to{' '}
+                  <span className="font-mono text-slate-400">/api/leads/ingest</span> — click
+                  Refresh after ~5 minutes.
+                </p>
+              </div>
             </div>
 
             {step === 'choose' && !showAutoView && (
@@ -302,8 +275,8 @@ export function GenerateLeadModal({
                       Auto pick everything
                     </p>
                     <p className="mt-1 text-xs text-slate-400">
-                      System randomly picks the business type, location, number of
-                      leads, and outreach tone \u2014 then finds leads immediately.
+                      Randomly picks an EdFoal ICP company type (e.g. SaaS, FinTech) and
+                      Indian tech hub \u2014 then starts the search.
                     </p>
                   </div>
                 </button>
@@ -321,8 +294,8 @@ export function GenerateLeadModal({
                       Fill in the details manually
                     </p>
                     <p className="mt-1 text-xs text-slate-400">
-                      Specify exactly which business type, location, lead count, and
-                      tone you want.
+                      Choose which type of tech buyer to target, city, lead count, and
+                      outreach tone.
                     </p>
                   </div>
                 </button>
@@ -338,7 +311,7 @@ export function GenerateLeadModal({
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <p className="text-[10px] uppercase tracking-wider text-slate-500">
-                        Business type
+                        Target company type
                       </p>
                       <p className="text-white">{autoPick.businessType}</p>
                     </div>
@@ -422,24 +395,36 @@ export function GenerateLeadModal({
             {step === 'manual' && !showAutoView && (
               <form onSubmit={handleManualSubmit} className="space-y-5 p-6">
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <FieldLabel label="Business type">
+                  <FieldLabel label="Target company type (ICP)">
                     <input
                       type="text"
+                      list="edfoal-icp-types"
                       value={form.businessType}
                       onChange={(e) => update('businessType', e.target.value)}
-                      placeholder="School, Cafe, Clinic..."
+                      placeholder="SaaS Startup, FinTech, EdTech..."
                       className={FIELD_CLS}
                       autoFocus
                     />
+                    <datalist id="edfoal-icp-types">
+                      {EDFOAL_ICP.targetCompanyTypes.map((type) => (
+                        <option key={type} value={type} />
+                      ))}
+                    </datalist>
                   </FieldLabel>
-                  <FieldLabel label="Location">
+                  <FieldLabel label="City / market">
                     <input
                       type="text"
+                      list="edfoal-icp-locations"
                       value={form.location}
                       onChange={(e) => update('location', e.target.value)}
-                      placeholder="Noida, Bangalore..."
+                      placeholder="Bangalore, Noida, Mumbai..."
                       className={FIELD_CLS}
                     />
+                    <datalist id="edfoal-icp-locations">
+                      {EDFOAL_ICP.targetLocations.map((loc) => (
+                        <option key={loc} value={loc} />
+                      ))}
+                    </datalist>
                   </FieldLabel>
                   <FieldLabel label="Number of leads">
                     <input
@@ -453,10 +438,10 @@ export function GenerateLeadModal({
                   <FieldLabel label="Outreach tone">
                     <select
                       value={form.tone}
-                      onChange={(e) => update('tone', e.target.value as Tone)}
+                      onChange={(e) => update('tone', e.target.value as EdfoalOutreachTone)}
                       className={FIELD_CLS}
                     >
-                      {TONE_OPTIONS.map((t) => (
+                      {EDFOAL_TONE_OPTIONS.map((t) => (
                         <option key={t} value={t}>
                           {t}
                         </option>
