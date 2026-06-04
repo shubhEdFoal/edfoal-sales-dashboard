@@ -56,6 +56,33 @@ const HEADER_ROW_MARKERS = new Set([
   'status',
 ]);
 
+function looksLikeEmailStyle(value: string): boolean {
+  const v = value.trim().toLowerCase();
+  if (!v) return false;
+  return (
+    EMAIL_STYLES.some((s) => s.toLowerCase() === v) ||
+    v.includes('story') ||
+    v.includes('profession') ||
+    v.includes('casual') ||
+    v.includes('value')
+  );
+}
+
+function resolveStatusAndStyle(
+  statusRaw: string,
+  emailStyleRaw: string
+): { status: LeadStatus; emailStyle: EmailStyle } {
+  if (looksLikeEmailStyle(statusRaw) && !emailStyleRaw.trim()) {
+    return { status: 'SENT', emailStyle: parseEmailStyle(statusRaw) };
+  }
+  return {
+    status: parseStatus(statusRaw),
+    emailStyle: emailStyleRaw.trim()
+      ? parseEmailStyle(emailStyleRaw)
+      : parseEmailStyle(''),
+  };
+}
+
 function normalizeKey(key: string): string {
   return key.trim().toLowerCase().replace(/[_-]+/g, ' ');
 }
@@ -147,7 +174,9 @@ function isHeaderRow(row: Record<string, string>): boolean {
 export function mapRowToLead(row: Record<string, string>, index: number): Lead {
   const businessName = pickValue(row, 'businessName');
   const email = pickValue(row, 'email');
-  const status = parseStatus(pickValue(row, 'status'));
+  const statusRaw = pickValue(row, 'status');
+  const emailStyleRaw = pickValue(row, 'emailStyle');
+  const { status, emailStyle } = resolveStatusAndStyle(statusRaw, emailStyleRaw);
   const respondedRaw = pickValue(row, 'responded');
   const repliedRaw = pickValue(row, 'replied');
 
@@ -172,7 +201,7 @@ export function mapRowToLead(row: Record<string, string>, index: number): Lead {
     address: pickValue(row, 'address'),
     status,
     sentId: pickValue(row, 'sentId'),
-    emailStyle: parseEmailStyle(pickValue(row, 'emailStyle')),
+    emailStyle,
     responded,
     replied,
     timestamp,
@@ -186,8 +215,20 @@ export function mapRowToLead(row: Record<string, string>, index: number): Lead {
 }
 
 export function mapRowsToLeads(rows: Record<string, string>[]): Lead[] {
-  return rows
-    .filter((row) => Object.values(row).some((v) => v.trim() !== ''))
-    .filter((row) => !isHeaderRow(row))
-    .map((row, index) => mapRowToLead(row, index));
+  const seen = new Set<string>();
+  const leads: Lead[] = [];
+
+  for (const [index, row] of rows.entries()) {
+    if (!Object.values(row).some((v) => v.trim() !== '')) continue;
+    if (isHeaderRow(row)) continue;
+
+    const lead = mapRowToLead(row, index);
+    const dedupeKey = lead.email.trim().toLowerCase() || lead.id;
+    if (seen.has(dedupeKey)) continue;
+    seen.add(dedupeKey);
+
+    leads.push(lead);
+  }
+
+  return leads;
 }

@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export const dynamic = 'force-dynamic';
 
 const DEFAULT_WEBHOOK_URL =
-  'https://shiiiitu.app.n8n.cloud/form/f84cc525-a95c-4e73-a872-04e0aa85f195';
+  'https://islandchief.app.n8n.cloud/form/aca1f3d8-2c4e-41b8-9ebe-04ac00c9e3b7';
 
 interface GenerateLeadsBody {
   businessType?: string;

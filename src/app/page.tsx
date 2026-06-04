@@ -17,6 +17,7 @@ import { PipelineFunnel } from '@/components/dashboard/PipelineFunnel';
 import { Header, type NavLink } from '@/components/layout/Header';
 import { GlowButton } from '@/components/ui/GlowButton';
 import type { Lead } from '@/data/leads';
+import { EDFOAL_LEADS_SHEET } from '@/config/edfoal-sheet';
 import { downloadLeadsCSV } from '@/lib/export-csv';
 import { computeFunnel, computeKPI } from '@/lib/sheets/kpi';
 import type { FunnelStage, LeadKPI } from '@/lib/sheets/kpi';
@@ -283,8 +284,17 @@ export default function Home() {
 
               {leads.length === 0 && (
                 <div className="rounded-card border border-accent-amber/30 bg-accent-amber/10 px-4 py-3 text-sm text-accent-amber">
-                  No leads in the platform yet. Add one manually or generate leads with the
-                  workflow.
+                  No leads in the platform yet. Add one manually, generate leads, or add rows
+                  in the{' '}
+                  <a
+                    href={EDFOAL_LEADS_SHEET.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-medium underline hover:text-amber-200"
+                  >
+                    Google Sheet
+                  </a>{' '}
+                  and click Refresh.
                 </div>
               )}
 
