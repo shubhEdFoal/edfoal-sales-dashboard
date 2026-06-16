@@ -5,7 +5,6 @@ import {
   ChevronLeft,
   LayoutDashboard,
   Mail,
-  Settings,
   Users,
 } from 'lucide-react';
 import { useState } from 'react';
@@ -16,7 +15,6 @@ const navItems = [
   { label: 'Leads', icon: Users },
   { label: 'Sequences', icon: Mail },
   { label: 'Analytics', icon: BarChart3 },
-  { label: 'Settings', icon: Settings },
 ];
 
 interface SidebarProps {

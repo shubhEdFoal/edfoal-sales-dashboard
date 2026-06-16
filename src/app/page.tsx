@@ -1,31 +1,29 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Download, Plus, RefreshCw, Sparkles } from 'lucide-react';
+import { Download, RefreshCw, Sparkles } from 'lucide-react';
 import { AnalyticsView } from '@/components/analytics/AnalyticsView';
-import { AddLeadModal } from '@/components/dashboard/AddLeadModal';
 import { GenerateLeadModal } from '@/components/dashboard/GenerateLeadModal';
 import {
   FilterBar,
   type HealthFilter,
   type StatusFilter,
 } from '@/components/dashboard/FilterBar';
-import { KPISection } from '@/components/dashboard/KPISection';
+import { DashboardView } from '@/components/dashboard/DashboardView';
 import { LeadDetailsModal } from '@/components/dashboard/LeadDetailsModal';
 import { LeadsTable } from '@/components/dashboard/LeadsTable';
-import { PipelineFunnel } from '@/components/dashboard/PipelineFunnel';
 import { Header, type NavLink } from '@/components/layout/Header';
 import { GlowButton } from '@/components/ui/GlowButton';
 import type { Lead } from '@/data/leads';
-import { EDFOAL_LEADS_SHEET } from '@/config/edfoal-sheet';
 import { downloadLeadsCSV } from '@/lib/export-csv';
-import { computeFunnel, computeKPI } from '@/lib/sheets/kpi';
-import type { FunnelStage, LeadKPI } from '@/lib/sheets/kpi';
+import { computeKPI } from '@/lib/sheets/kpi';
+import type { LeadKPI } from '@/lib/sheets/kpi';
+
+const LEADS_PAGE_SIZE = 10;
 
 interface LeadsApiResponse {
   leads: Lead[];
   kpi: LeadKPI;
-  funnel: FunnelStage[];
   error?: string;
 }
 
@@ -33,7 +31,6 @@ const PAGE_TITLE: Record<NavLink, string> = {
   Dashboard: 'Sales Automation',
   Leads: 'All Leads',
   Analytics: 'Predictive Analytics',
-  Settings: 'Settings',
 };
 
 const PAGE_SUBTITLE: Partial<Record<NavLink, string>> = {
@@ -45,7 +42,6 @@ export default function Home() {
   const [activeNav, setActiveNav] = useState<NavLink>('Dashboard');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [kpi, setKpi] = useState<LeadKPI | null>(null);
-  const [funnel, setFunnel] = useState<FunnelStage[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -53,52 +49,31 @@ export default function Home() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [healthFilter, setHealthFilter] = useState<HealthFilter>('ALL');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
-  const [addLeadOpen, setAddLeadOpen] = useState(false);
   const [generateLeadOpen, setGenerateLeadOpen] = useState(false);
+  const [statusRefreshKey, setStatusRefreshKey] = useState(0);
+  const [leadsPage, setLeadsPage] = useState(1);
 
-  const handleDeleteLead = useCallback(
-    async (lead: Lead) => {
-      try {
-        const res = await fetch(`/api/leads?id=${encodeURIComponent(lead.id)}`, {
-          method: 'DELETE',
-        });
-        const data = (await res.json()) as LeadsApiResponse;
-        if (!res.ok) {
-          throw new Error(data.error ?? 'Failed to delete lead');
-        }
-        setLeads(data.leads);
-        setKpi(data.kpi);
-        setFunnel(data.funnel);
-        setSelectedLead((current) => (current?.id === lead.id ? null : current));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to delete lead');
-      }
-    },
-    []
-  );
+  const applyLeadsResponse = useCallback((data: LeadsApiResponse) => {
+    setLeads(data.leads);
+    setKpi(data.kpi);
+  }, []);
 
   const handleExportCSV = useCallback(() => {
     if (leads.length === 0) return;
     downloadLeadsCSV(leads);
   }, [leads]);
 
-  const applyLeadsResponse = useCallback((data: LeadsApiResponse) => {
-    setLeads(data.leads);
-    setKpi(data.kpi);
-    setFunnel(data.funnel);
-  }, []);
-
   const loadLeads = useCallback(
-    async (syncFromSheet = false, options?: { initial?: boolean }) => {
+    async (options?: { initial?: boolean }) => {
       if (options?.initial) setLoading(true);
       else setRefreshing(true);
       setError(null);
 
       try {
-        const res = await fetch(
-          `/api/leads?sync=${syncFromSheet ? '1' : '0'}&_=${Date.now()}`,
-          { cache: 'no-store', headers: { 'Cache-Control': 'no-cache' } }
-        );
+        const res = await fetch(`/api/leads?_=${Date.now()}`, {
+          cache: 'no-store',
+          headers: { 'Cache-Control': 'no-cache' },
+        });
         const data = (await res.json()) as LeadsApiResponse;
 
         if (!res.ok) {
@@ -122,7 +97,7 @@ export default function Home() {
     for (const delay of delays) {
       await new Promise((r) => setTimeout(r, delay));
       try {
-        const res = await fetch(`/api/leads?sync=1&_=${Date.now()}`, {
+        const res = await fetch(`/api/leads?_=${Date.now()}`, {
           cache: 'no-store',
         });
         const data = (await res.json()) as LeadsApiResponse;
@@ -136,39 +111,8 @@ export default function Home() {
     }
   }, [applyLeadsResponse, leads.length]);
 
-  const handleSaveLead = useCallback(
-    async (lead: Lead): Promise<{ ok: boolean; error?: string }> => {
-      try {
-        const res = await fetch('/api/leads', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(lead),
-        });
-        const data = (await res.json()) as LeadsApiResponse & {
-          ok?: boolean;
-          error?: string;
-        };
-        if (!res.ok || data.ok === false) {
-          return { ok: false, error: data.error ?? 'Save failed.' };
-        }
-        if (data.leads) {
-          applyLeadsResponse(data);
-        } else {
-          await loadLeads(true);
-        }
-        return { ok: true };
-      } catch (err) {
-        return {
-          ok: false,
-          error: err instanceof Error ? err.message : 'Network error.',
-        };
-      }
-    },
-    [applyLeadsResponse, loadLeads]
-  );
-
   useEffect(() => {
-    void loadLeads(true, { initial: true });
+    void loadLeads({ initial: true });
   }, [loadLeads]);
 
   const filteredLeads = useMemo(() => {
@@ -186,12 +130,25 @@ export default function Home() {
     });
   }, [leads, searchTerm, statusFilter, healthFilter]);
 
+  useEffect(() => {
+    setLeadsPage(1);
+  }, [searchTerm, statusFilter, healthFilter]);
+
+  useEffect(() => {
+    const maxPage = Math.max(1, Math.ceil(filteredLeads.length / LEADS_PAGE_SIZE));
+    if (leadsPage > maxPage) setLeadsPage(maxPage);
+  }, [filteredLeads.length, leadsPage]);
+
+  const paginatedLeads = useMemo(() => {
+    const start = (leadsPage - 1) * LEADS_PAGE_SIZE;
+    return filteredLeads.slice(start, start + LEADS_PAGE_SIZE);
+  }, [filteredLeads, leadsPage]);
+
   const showLoadingSkeleton = loading && leads.length === 0;
   const displayKpi = kpi ?? computeKPI(leads);
-  const displayFunnel = funnel.length > 0 ? funnel : computeFunnel(leads);
   const emptyTableMessage =
     leads.length === 0
-      ? 'No leads yet — use Add Lead or Generate Lead to get started'
+      ? 'No leads yet — use Generate Lead to get started'
       : undefined;
 
   return (
@@ -211,39 +168,28 @@ export default function Home() {
               <GlowButton
                 variant="ghost"
                 icon={RefreshCw}
-                onClick={() => void loadLeads(true)}
+                onClick={() => void loadLeads()}
                 disabled={refreshing}
               >
                 {refreshing ? 'Refreshing...' : 'Refresh'}
               </GlowButton>
-              {activeNav !== 'Settings' && (
+              <GlowButton
+                variant="ghost"
+                icon={Download}
+                onClick={handleExportCSV}
+                disabled={leads.length === 0}
+              >
+                Export CSV
+              </GlowButton>
+              {activeNav === 'Dashboard' && (
                 <GlowButton
                   variant="ghost"
-                  icon={Download}
-                  onClick={handleExportCSV}
-                  disabled={leads.length === 0}
+                  icon={Sparkles}
+                  onClick={() => setGenerateLeadOpen(true)}
+                  className="border-accent-amber/40 text-accent-amber hover:bg-accent-amber/10 hover:text-accent-amber"
                 >
-                  Export CSV
+                  Generate Lead
                 </GlowButton>
-              )}
-              {activeNav === 'Dashboard' && (
-                <>
-                  <GlowButton
-                    variant="primary"
-                    icon={Plus}
-                    onClick={() => setAddLeadOpen(true)}
-                  >
-                    Add Lead
-                  </GlowButton>
-                  <GlowButton
-                    variant="ghost"
-                    icon={Sparkles}
-                    onClick={() => setGenerateLeadOpen(true)}
-                    className="border-accent-amber/40 text-accent-amber hover:bg-accent-amber/10 hover:text-accent-amber"
-                  >
-                    Generate Lead
-                  </GlowButton>
-                </>
               )}
             </div>
           </section>
@@ -269,45 +215,16 @@ export default function Home() {
               <div className="h-64 animate-pulse rounded-card border border-border bg-bg-surface" />
             </div>
           ) : activeNav === 'Dashboard' ? (
-            <div className="space-y-6">
-              <KPISection kpi={displayKpi} />
-              <PipelineFunnel stages={displayFunnel} />
-
-              <FilterBar
-                searchTerm={searchTerm}
-                statusFilter={statusFilter}
-                healthFilter={healthFilter}
-                onSearchChange={setSearchTerm}
-                onStatusChange={setStatusFilter}
-                onHealthChange={setHealthFilter}
-              />
-
-              {leads.length === 0 && (
-                <div className="rounded-card border border-accent-amber/30 bg-accent-amber/10 px-4 py-3 text-sm text-accent-amber">
-                  No leads in the platform yet. Add one manually, generate leads, or add rows
-                  in the{' '}
-                  <a
-                    href={EDFOAL_LEADS_SHEET.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-medium underline hover:text-amber-200"
-                  >
-                    Google Sheet
-                  </a>{' '}
-                  and click Refresh.
-                </div>
-              )}
-
-              <LeadsTable
-                leads={filteredLeads}
-                emptyMessage={emptyTableMessage}
-                onView={setSelectedLead}
-                onDelete={handleDeleteLead}
-              />
-            </div>
+            <DashboardView
+              leads={leads}
+              kpi={displayKpi}
+              statusRefreshKey={statusRefreshKey}
+              onViewLead={setSelectedLead}
+              onViewAllLeads={() => setActiveNav('Leads')}
+            />
           ) : activeNav === 'Analytics' ? (
             <AnalyticsView leads={leads} />
-          ) : activeNav === 'Leads' ? (
+          ) : (
             <div className="space-y-6">
               <FilterBar
                 searchTerm={searchTerm}
@@ -318,31 +235,28 @@ export default function Home() {
                 onHealthChange={setHealthFilter}
               />
               <LeadsTable
-                leads={filteredLeads}
+                leads={paginatedLeads}
                 emptyMessage={emptyTableMessage}
                 onView={setSelectedLead}
-                onDelete={handleDeleteLead}
+                pagination={{
+                  page: leadsPage,
+                  pageSize: LEADS_PAGE_SIZE,
+                  total: filteredLeads.length,
+                  onPageChange: setLeadsPage,
+                }}
               />
-            </div>
-          ) : (
-            <div className="rounded-card border border-dashed border-border bg-bg-surface p-12 text-center">
-              <p className="text-sm text-slate-400">Settings panel coming soon.</p>
             </div>
           )}
         </main>
       </div>
 
       <LeadDetailsModal lead={selectedLead} onClose={() => setSelectedLead(null)} />
-      <AddLeadModal
-        open={addLeadOpen}
-        onClose={() => setAddLeadOpen(false)}
-        onSave={handleSaveLead}
-      />
       <GenerateLeadModal
         open={generateLeadOpen}
         onClose={() => setGenerateLeadOpen(false)}
         onGenerated={() => {
-          void loadLeads(true);
+          setStatusRefreshKey((key) => key + 1);
+          void loadLeads();
           void pollForNewLeads();
         }}
       />

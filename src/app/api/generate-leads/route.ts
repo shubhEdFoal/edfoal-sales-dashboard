@@ -1,15 +1,18 @@
 import { NextResponse } from 'next/server';
+import { getScrapeApiUrl, scraperApiHeaders } from '@/lib/api/config';
 
 export const dynamic = 'force-dynamic';
 
-const DEFAULT_WEBHOOK_URL =
-  'https://islandchief.app.n8n.cloud/form/aca1f3d8-2c4e-41b8-9ebe-04ac00c9e3b7';
-
 interface GenerateLeadsBody {
   businessType?: string;
-  location?: string;
+  state?: string;
+  country?: string;
   count?: number | string;
   tone?: string;
+}
+
+function mapEmailTone(tone: string): string {
+  return tone.trim().toLowerCase();
 }
 
 export async function POST(req: Request) {
@@ -21,62 +24,93 @@ export async function POST(req: Request) {
   }
 
   const businessType = (body.businessType ?? '').toString().trim();
-  const location = (body.location ?? '').toString().trim();
+  const state = (body.state ?? '').toString().trim();
+  const country = (body.country ?? '').toString().trim();
   const tone = (body.tone ?? '').toString().trim();
   const countRaw = body.count;
-  const count = typeof countRaw === 'number' ? countRaw : parseInt(String(countRaw ?? ''), 10);
+  const numberOfLeads =
+    typeof countRaw === 'number' ? countRaw : parseInt(String(countRaw ?? ''), 10);
 
   if (!businessType) {
     return NextResponse.json(
-      { error: 'Target company type (ICP) is required — e.g. SaaS Startup, FinTech.' },
+      { error: 'Target company type is required — e.g. restaurant, CA firm.' },
       { status: 400 }
     );
   }
-  if (!location) {
-    return NextResponse.json({ error: 'Location is required.' }, { status: 400 });
+
+  if (!state) {
+    return NextResponse.json({ error: 'State / city is required.' }, { status: 400 });
   }
-  if (!Number.isFinite(count) || count <= 0) {
+
+  if (!country) {
+    return NextResponse.json({ error: 'Country is required.' }, { status: 400 });
+  }
+
+  if (!Number.isFinite(numberOfLeads) || numberOfLeads <= 0) {
     return NextResponse.json(
       { error: 'Number of leads must be a positive number.' },
       { status: 400 }
     );
   }
+
   if (!tone) {
     return NextResponse.json({ error: 'Outreach tone is required.' }, { status: 400 });
   }
 
-  const webhookUrl = (process.env.N8N_GENERATE_LEADS_URL ?? DEFAULT_WEBHOOK_URL).trim();
-
-  const form = new FormData();
-  form.append('field-0', businessType);
-  form.append('field-1', location);
-  form.append('field-2', String(count));
-  form.append('field-3', tone);
+  const payload = {
+    businessType,
+    state,
+    country,
+    numberOfLeads,
+    emailTone: mapEmailTone(tone),
+  };
 
   try {
-    const res = await fetch(webhookUrl, {
+    const res = await fetch(getScrapeApiUrl(), {
       method: 'POST',
-      body: form,
-      redirect: 'follow',
+      headers: scraperApiHeaders({ 'Content-Type': 'application/json' }),
+      body: JSON.stringify(payload),
       cache: 'no-store',
     });
 
     const text = await res.text();
-    if (!res.ok) {
-      return NextResponse.json(
-        {
-          error: `Lead generator returned ${res.status}.`,
-          detail: text.slice(0, 500),
-        },
-        { status: 502 }
-      );
+    let data: Record<string, unknown> = {};
+    try {
+      data = JSON.parse(text) as Record<string, unknown>;
+    } catch {
+      /* non-JSON response */
     }
 
-    return NextResponse.json({ ok: true, status: res.status, response: text.slice(0, 2000) });
+    if (!res.ok) {
+      const message =
+        typeof data.error === 'string'
+          ? data.error
+          : typeof data.message === 'string'
+            ? data.message
+            : `Scrape API returned ${res.status}.`;
+      return NextResponse.json({ error: message, detail: text.slice(0, 500) }, { status: 502 });
+    }
+
+    if (data.success === false) {
+      const message =
+        typeof data.error === 'string'
+          ? data.error
+          : typeof data.message === 'string'
+            ? data.message
+            : 'Scrape request failed.';
+      return NextResponse.json({ error: message }, { status: 502 });
+    }
+
+    return NextResponse.json({
+      ok: true,
+      requestID: data.requestID ?? null,
+      message: data.message ?? 'Scraping started.',
+      query: data.query ?? null,
+    });
   } catch (err) {
     return NextResponse.json(
       {
-        error: err instanceof Error ? err.message : 'Failed to call the lead generator.',
+        error: err instanceof Error ? err.message : 'Failed to start lead generation.',
       },
       { status: 502 }
     );

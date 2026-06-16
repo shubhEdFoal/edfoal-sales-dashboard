@@ -124,16 +124,6 @@ export function LeadDetailsModal({ lead, onClose }: LeadDetailsModalProps) {
                 >
                   {lead.shouldContinue ? 'Continue' : 'Do not continue'}
                 </span>
-                <span
-                  className={cn(
-                    'rounded-full px-2.5 py-0.5 text-xs',
-                    lead.followUpDay > 3
-                      ? 'bg-accent-amber/10 text-accent-amber'
-                      : 'bg-bg-deep text-slate-300'
-                  )}
-                >
-                  Day {lead.followUpDay}
-                </span>
               </div>
 
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -193,31 +183,50 @@ export function LeadDetailsModal({ lead, onClose }: LeadDetailsModalProps) {
                 <Field label="Target segment">
                   {lead.targetSegment || '—'}
                 </Field>
-                <Field label="Responded">
-                  <span
-                    className={
-                      lead.responded ? 'text-accent-green' : 'text-slate-400'
-                    }
-                  >
-                    {lead.responded ? 'Yes' : 'No'}
-                  </span>
+                <Field label="Mail status">
+                  {lead.mailStatus || '—'}
                 </Field>
-                <Field label="Replied">
-                  <span
-                    className={
-                      lead.replied ? 'text-accent-amber' : 'text-slate-400'
-                    }
-                  >
-                    {lead.replied ? 'Yes' : 'No'}
-                  </span>
+                <Field label="Response">
+                  {lead.response || (lead.responded ? 'Yes' : 'No')}
+                </Field>
+                <Field label="Replied by us">
+                  {lead.repliedByUs || (lead.replied ? 'Yes' : 'No')}
+                </Field>
+                <Field label="Re-engagement sent">
+                  {lead.reEngagementSent || '—'}
+                </Field>
+                <Field label="Scheduling sent">
+                  {lead.schedulingSent || '—'}
+                </Field>
+                <Field label="Location">
+                  {[lead.state, lead.country].filter(Boolean).join(', ') || '—'}
                 </Field>
                 <Field icon={Calendar} label="Last activity">
                   <span className="text-slate-200">{formatTimestamp(lead.timestamp)}</span>
                 </Field>
-                <Field label="Follow-up day">
-                  <span className="font-mono">Day {lead.followUpDay}</span>
-                </Field>
+                {lead.requestID && (
+                  <Field label="Request ID">
+                    <span className="break-all font-mono text-xs">{lead.requestID}</span>
+                  </Field>
+                )}
               </div>
+
+              {lead.allEmails && lead.allEmails.length > 1 && (
+                <Field icon={Mail} label="All emails">
+                  <ul className="space-y-1">
+                    {lead.allEmails.filter((e) => e.includes('@')).map((email) => (
+                      <li key={email}>
+                        <a
+                          href={`mailto:${email}`}
+                          className="break-all text-accent-blue hover:underline"
+                        >
+                          {email}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </Field>
+              )}
 
               <div className="flex flex-wrap gap-2 border-t border-border pt-4">
                 {lead.email && (
@@ -236,6 +245,17 @@ export function LeadDetailsModal({ lead, onClose }: LeadDetailsModalProps) {
                   >
                     <Phone className="h-4 w-4" />
                     Call
+                  </a>
+                )}
+                {lead.mapsUrl && (
+                  <a
+                    href={lead.mapsUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-btn border border-border px-3 py-2 text-sm text-slate-200 transition-colors hover:bg-bg-deep hover:text-white"
+                  >
+                    <MapPin className="h-4 w-4" />
+                    Maps
                   </a>
                 )}
               </div>
