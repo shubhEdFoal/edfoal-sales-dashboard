@@ -21,5 +21,17 @@ export interface Lead {
   shouldContinue: boolean;
   targetSegment: string;
   followUpDay: number;
+  allEmails?: string[];
+  mailStatus?: string | null;
+  response?: string | null;
+  repliedByUs?: string | null;
+  reEngagementSent?: string | null;
+  schedulingSent?: string | null;
+  requestID?: string | null;
+  linkedinSearch?: string | null;
+  mapsUrl?: string | null;
+  rating?: string | null;
+  state?: string | null;
+  country?: string | null;
 }
 

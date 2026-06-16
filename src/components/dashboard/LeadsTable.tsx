@@ -1,20 +1,280 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ExternalLink, Eye, Mail, SearchX, Trash2 } from 'lucide-react';
+import { ExternalLink, Eye, SearchX } from 'lucide-react';
 import type { Lead } from '@/data/leads';
 import { HealthBadge } from '@/components/ui/HealthBadge';
 import { StatusPill } from '@/components/ui/StatusPill';
+import { TablePagination } from '@/components/ui/TablePagination';
 import { cn } from '@/lib/utils';
 
 interface LeadsTableProps {
   leads: Lead[];
   emptyMessage?: string;
+  compact?: boolean;
   onView?: (lead: Lead) => void;
-  onDelete?: (lead: Lead) => void;
+  pagination?: {
+    page: number;
+    pageSize: number;
+    total: number;
+    onPageChange: (page: number) => void;
+  };
 }
 
-export function LeadsTable({ leads, emptyMessage, onView, onDelete }: LeadsTableProps) {
+function CellText({ value, mono = false }: { value: string | null | undefined; mono?: boolean }) {
+  const text = value?.trim();
+  if (!text) return <span className="text-slate-600">—</span>;
+  return (
+    <span className={cn('text-sm text-slate-200', mono && 'font-mono text-xs')}>{text}</span>
+  );
+}
+
+function CellLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noreferrer"
+      className="inline-flex max-w-[220px] items-center gap-1 truncate text-xs text-accent-blue hover:underline"
+      title={label}
+    >
+      <span className="truncate">{label}</span>
+      <ExternalLink className="h-3 w-3 shrink-0" />
+    </a>
+  );
+}
+
+function formatDate(value: string | null | undefined): string {
+  if (!value) return '—';
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value;
+  return date.toLocaleString();
+}
+
+type ColumnDef = {
+  key: string;
+  label: string;
+  minWidth?: string;
+  render: (lead: Lead) => React.ReactNode;
+};
+
+const TABLE_COLUMNS: ColumnDef[] = [
+  {
+    key: 'id',
+    label: 'ID',
+    minWidth: '72px',
+    render: (lead) => <CellText value={lead.id} mono />,
+  },
+  {
+    key: 'businessName',
+    label: 'BUSINESS',
+    minWidth: '200px',
+    render: (lead) => (
+      <span className="block max-w-[240px] truncate text-sm font-semibold text-white">
+        {lead.businessName}
+      </span>
+    ),
+  },
+  {
+    key: 'email',
+    label: 'EMAIL',
+    minWidth: '180px',
+    render: (lead) => {
+      const emails = (lead.allEmails ?? []).filter((e) => e.includes('@'));
+      const primary = lead.email || emails[0];
+      if (!primary) return <CellText value={null} />;
+      return (
+        <a
+          href={`mailto:${primary}`}
+          className="inline-flex max-w-[220px] items-center gap-1 truncate font-mono text-xs text-slate-300 hover:text-accent-blue"
+        >
+          {emails.length > 1 ? `${primary} (+${emails.length - 1})` : primary}
+        </a>
+      );
+    },
+  },
+  {
+    key: 'phone',
+    label: 'PHONE',
+    minWidth: '140px',
+    render: (lead) => <CellText value={lead.phone} />,
+  },
+  {
+    key: 'website',
+    label: 'WEBSITE',
+    minWidth: '160px',
+    render: (lead) =>
+      lead.website ? (
+        <CellLink
+          href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`}
+          label={lead.website}
+        />
+      ) : (
+        <CellText value={null} />
+      ),
+  },
+  {
+    key: 'address',
+    label: 'ADDRESS',
+    minWidth: '220px',
+    render: (lead) => (
+      <span className="block max-w-[260px] truncate text-sm text-slate-200">
+        {lead.address || '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'rating',
+    label: 'RATING',
+    minWidth: '80px',
+    render: (lead) => <CellText value={lead.rating} />,
+  },
+  {
+    key: 'businessType',
+    label: 'BUSINESS TYPE',
+    minWidth: '140px',
+    render: (lead) => <CellText value={lead.targetSegment} />,
+  },
+  {
+    key: 'state',
+    label: 'STATE',
+    minWidth: '100px',
+    render: (lead) => <CellText value={lead.state} />,
+  },
+  {
+    key: 'country',
+    label: 'COUNTRY',
+    minWidth: '100px',
+    render: (lead) => <CellText value={lead.country} />,
+  },
+  {
+    key: 'emailTone',
+    label: 'EMAIL TONE',
+    minWidth: '120px',
+    render: (lead) => (
+      <span className="rounded-full bg-bg-deep px-2.5 py-1 text-xs text-slate-300">
+        {lead.emailStyle}
+      </span>
+    ),
+  },
+  {
+    key: 'sentId',
+    label: 'SENT ID',
+    minWidth: '140px',
+    render: (lead) => <CellText value={lead.sentId} mono />,
+  },
+  {
+    key: 'mailStatus',
+    label: 'MAIL STATUS',
+    minWidth: '110px',
+    render: (lead) => <CellText value={lead.mailStatus} />,
+  },
+  {
+    key: 'response',
+    label: 'RESPONSE',
+    minWidth: '120px',
+    render: (lead) => <CellText value={lead.response} />,
+  },
+  {
+    key: 'repliedByUs',
+    label: 'REPLIED BY US',
+    minWidth: '120px',
+    render: (lead) => <CellText value={lead.repliedByUs} />,
+  },
+  {
+    key: 'health',
+    label: 'HEALTH',
+    minWidth: '100px',
+    render: (lead) => <HealthBadge health={lead.campaignHealth} />,
+  },
+  {
+    key: 'reEngagementSent',
+    label: 'RE-ENGAGEMENT',
+    minWidth: '120px',
+    render: (lead) => <CellText value={lead.reEngagementSent} />,
+  },
+  {
+    key: 'schedulingSent',
+    label: 'SCHEDULING',
+    minWidth: '110px',
+    render: (lead) => <CellText value={lead.schedulingSent} />,
+  },
+  {
+    key: 'status',
+    label: 'STATUS',
+    minWidth: '130px',
+    render: (lead) => <StatusPill status={lead.status} />,
+  },
+  {
+    key: 'requestID',
+    label: 'REQUEST ID',
+    minWidth: '180px',
+    render: (lead) => (
+      <span className="block max-w-[200px] truncate font-mono text-xs text-slate-400">
+        {lead.requestID || '—'}
+      </span>
+    ),
+  },
+  {
+    key: 'scrapedAt',
+    label: 'SCRAPED AT',
+    minWidth: '160px',
+    render: (lead) => (
+      <span className="whitespace-nowrap text-xs text-slate-300">
+        {formatDate(lead.timestamp)}
+      </span>
+    ),
+  },
+  {
+    key: 'linkedin',
+    label: 'LINKEDIN',
+    minWidth: '100px',
+    render: (lead) =>
+      lead.linkedinSearch ? (
+        <CellLink href={lead.linkedinSearch} label="Search" />
+      ) : (
+        <CellText value={null} />
+      ),
+  },
+  {
+    key: 'maps',
+    label: 'MAPS',
+    minWidth: '90px',
+    render: (lead) =>
+      lead.mapsUrl ? <CellLink href={lead.mapsUrl} label="Open" /> : <CellText value={null} />,
+  },
+];
+
+export function LeadsTable({
+  leads,
+  emptyMessage,
+  compact = false,
+  onView,
+  pagination,
+}: LeadsTableProps) {
+  const columns: ColumnDef[] = [
+    ...TABLE_COLUMNS,
+    {
+      key: 'actions',
+      label: 'ACTIONS',
+      minWidth: '72px',
+      render: (lead) => (
+        <button
+          type="button"
+          aria-label="View details"
+          title="View details"
+          onClick={() => onView?.(lead)}
+          className={cn(
+            'flex items-center justify-center rounded-btn border border-border text-slate-400 transition-colors hover:border-accent-blue/40 hover:bg-accent-blue/10 hover:text-accent-blue active:scale-95',
+            compact ? 'h-7 w-7' : 'h-8 w-8'
+          )}
+        >
+          <Eye className="h-3.5 w-3.5" />
+        </button>
+      ),
+    },
+  ];
+
   if (leads.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center rounded-card border border-border bg-bg-surface py-16">
@@ -24,125 +284,62 @@ export function LeadsTable({ leads, emptyMessage, onView, onDelete }: LeadsTable
         </p>
         <p className="mt-1 text-sm text-slate-500">
           {emptyMessage
-            ? 'Add a lead or generate leads to populate the table'
+            ? 'Generate leads to populate the table'
             : 'Try adjusting your search or filter criteria'}
         </p>
       </div>
     );
   }
 
+  const cellPad = compact ? 'px-3 py-2.5' : 'px-4 py-3';
+
   return (
-    <div className="overflow-x-auto rounded-card border border-border">
-      <table className="w-full min-w-[900px]">
-        <thead>
-          <tr className="bg-bg-deep text-left">
-            {[
-              'BUSINESS',
-              'EMAIL',
-              'STATUS',
-              'HEALTH',
-              'EMAIL STYLE',
-              'FOLLOW-UP DAY',
-              'ACTIONS',
-            ].map((col) => (
-              <th
-                key={col}
-                className="px-4 py-3 text-xs font-medium tracking-widest text-slate-400"
-              >
-                {col}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {leads.map((lead, index) => (
-            <motion.tr
-              key={lead.id}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.2, delay: index * 0.02 }}
-              className="border-t border-border transition-colors hover:bg-bg-surface/30"
-            >
-              <td className="px-4 py-4">
-                <p className="font-semibold text-white">{lead.businessName}</p>
-                <p className="font-mono text-xs text-slate-500">{lead.sentId}</p>
-              </td>
-              <td className="px-4 py-4">
-                <a
-                  href={`mailto:${lead.email}`}
-                  className="inline-flex items-center gap-1 font-mono text-xs text-slate-300 hover:text-accent-blue"
-                >
-                  {lead.email}
-                  <ExternalLink className="h-3 w-3" />
-                </a>
-              </td>
-              <td className="px-4 py-4">
-                <StatusPill status={lead.status} />
-              </td>
-              <td className="px-4 py-4">
-                <HealthBadge health={lead.campaignHealth} />
-              </td>
-              <td className="px-4 py-4">
-                <span className="rounded-full bg-bg-deep px-2.5 py-1 text-xs text-slate-300">
-                  {lead.emailStyle}
-                </span>
-              </td>
-              <td className="px-4 py-4">
-                <span
+    <div className="rounded-card border border-border bg-bg-surface">
+      <div className="overflow-x-auto">
+        <table className="w-max min-w-full">
+          <thead>
+            <tr className="bg-bg-deep text-left">
+              {columns.map((col) => (
+                <th
+                  key={col.key}
+                  style={{ minWidth: col.minWidth }}
                   className={cn(
-                    'font-mono text-sm font-medium',
-                    lead.followUpDay > 3 ? 'text-accent-amber' : 'text-accent-green'
+                    'whitespace-nowrap text-xs font-medium tracking-widest text-slate-400',
+                    compact ? 'px-3 py-2' : 'px-4 py-3'
                   )}
                 >
-                  Day {lead.followUpDay}
-                </span>
-              </td>
-              <td className="px-4 py-4">
-                <div className="flex items-center gap-1">
-                  <button
-                    type="button"
-                    aria-label="View details"
-                    title="View details"
-                    onClick={() => onView?.(lead)}
-                    className="flex h-8 w-8 items-center justify-center rounded-btn border border-border text-slate-400 transition-colors hover:border-accent-blue/40 hover:bg-accent-blue/10 hover:text-accent-blue active:scale-95"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  {lead.email ? (
-                    <a
-                      href={`mailto:${lead.email}`}
-                      aria-label={`Send email to ${lead.email}`}
-                      title={`Send email to ${lead.email}`}
-                      className="flex h-8 w-8 items-center justify-center rounded-btn border border-border text-slate-400 transition-colors hover:border-accent-blue/40 hover:bg-accent-blue/10 hover:text-accent-blue active:scale-95"
-                    >
-                      <Mail className="h-4 w-4" />
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      disabled
-                      aria-label="No email available"
-                      title="No email available"
-                      className="flex h-8 w-8 cursor-not-allowed items-center justify-center rounded-btn border border-border text-slate-700"
-                    >
-                      <Mail className="h-4 w-4" />
-                    </button>
-                  )}
-                  <button
-                    type="button"
-                    aria-label="Delete from table"
-                    title="Delete from table"
-                    onClick={() => onDelete?.(lead)}
-                    className="flex h-8 w-8 items-center justify-center rounded-btn border border-border text-slate-400 transition-colors hover:border-accent-red/40 hover:bg-accent-red/10 hover:text-accent-red active:scale-95"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </td>
-            </motion.tr>
-          ))}
-        </tbody>
-      </table>
+                  {col.label}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {leads.map((lead, index) => (
+              <motion.tr
+                key={lead.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.2, delay: index * 0.02 }}
+                className="border-t border-border transition-colors hover:bg-bg-surface/30"
+              >
+                {columns.map((col) => (
+                  <td key={col.key} className={cn(cellPad, 'align-middle')}>
+                    {col.render(lead)}
+                  </td>
+                ))}
+              </motion.tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      {pagination && (
+        <TablePagination
+          page={pagination.page}
+          pageSize={pagination.pageSize}
+          total={pagination.total}
+          onPageChange={pagination.onPageChange}
+        />
+      )}
     </div>
   );
 }

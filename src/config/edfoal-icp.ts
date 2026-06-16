@@ -34,7 +34,7 @@ export const EDFOAL_ICP = {
     'D2C Brand (scaling tech)',
   ],
 
-  /** Primary markets (USA & UK only) — field-1 in n8n */
+  /** Primary markets — city/state suggestions for Generate Lead */
   targetLocations: [
     'New York, USA',
     'San Francisco, USA',
@@ -51,7 +51,29 @@ export const EDFOAL_ICP = {
     'Bristol, UK',
     'Leeds, UK',
     'Cambridge, UK',
+    'Delhi, India',
+    'Mumbai, India',
+    'Bangalore, India',
   ],
+
+  targetStates: [
+    'Delhi',
+    'Mumbai',
+    'Bangalore',
+    'New York',
+    'San Francisco',
+    'Austin',
+    'Boston',
+    'Seattle',
+    'Chicago',
+    'Los Angeles',
+    'Miami',
+    'London',
+    'Manchester',
+    'Birmingham',
+  ],
+
+  targetCountries: ['India', 'USA', 'UK'],
 
   defaultLeadCount: '5',
 

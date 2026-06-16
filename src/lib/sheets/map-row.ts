@@ -22,7 +22,7 @@ const EMAIL_STYLES: EmailStyle[] = [
   'Value-led',
 ];
 
-const COLUMN_ALIASES: Record<keyof Lead, string[]> = {
+const COLUMN_ALIASES: Partial<Record<keyof Lead, string[]>> = {
   id: ['id', 'lead id', 'lead_id', 'row id'],
   businessName: ['business name', 'business', 'company', 'businessname', 'name'],
   email: ['email', 'email address', 'e-mail'],
@@ -89,6 +89,7 @@ function normalizeKey(key: string): string {
 
 function pickValue(row: Record<string, string>, field: keyof Lead): string {
   const aliases = COLUMN_ALIASES[field];
+  if (!aliases) return '';
   for (const [key, value] of Object.entries(row)) {
     const normalized = normalizeKey(key);
     if (aliases.includes(normalized) && value.trim() !== '') {
