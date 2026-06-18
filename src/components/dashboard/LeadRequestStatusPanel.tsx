@@ -71,7 +71,11 @@ export function LeadRequestStatusPanel({
   }, []);
 
   useEffect(() => {
-    void loadStatus();
+    const timer = window.setTimeout(() => {
+      void loadStatus();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [loadStatus, refreshKey]);
 
   useEffect(() => {
@@ -88,7 +92,7 @@ export function LeadRequestStatusPanel({
     <>
       <section
         className={cn(
-          'flex flex-col overflow-hidden rounded-card border border-border bg-bg-surface p-5',
+          'widget-card flex flex-col overflow-hidden p-5',
           PANEL_HEIGHT,
           className
         )}
@@ -97,14 +101,14 @@ export function LeadRequestStatusPanel({
           <div>
             <div className="flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-accent-amber" />
-              <h2 className="text-lg font-semibold text-white">Lead generation status</h2>
+              <h2 className="text-lg font-extrabold text-slate-950">Lead generation status</h2>
               {runningCount > 0 && (
                 <span className="rounded-full bg-accent-amber/15 px-2 py-0.5 text-xs font-medium text-accent-amber">
                   {runningCount} running
                 </span>
               )}
             </div>
-            <p className="mt-1 text-xs text-slate-400">
+            <p className="mt-1 text-xs text-slate-500">
               Active and recent lead-finding jobs — click a row for details.
             </p>
           </div>
@@ -112,7 +116,7 @@ export function LeadRequestStatusPanel({
             type="button"
             onClick={() => void loadStatus({ silent: true })}
             disabled={refreshing}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-btn border border-border px-3 py-1.5 text-xs text-slate-300 transition-colors hover:bg-bg-deep hover:text-white disabled:opacity-50"
+            className="inline-flex shrink-0 items-center gap-1.5 rounded-2xl border border-white/60 bg-white/55 px-3 py-1.5 text-xs font-semibold text-slate-600 shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:bg-indigo-50 hover:text-indigo-600 disabled:opacity-50"
           >
             <RefreshCw className={cn('h-3.5 w-3.5', refreshing && 'animate-spin')} />
             Refresh
@@ -121,7 +125,7 @@ export function LeadRequestStatusPanel({
 
         <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
           {error && (
-            <div className="mb-3 shrink-0 rounded-btn border border-accent-red/30 bg-accent-red/10 px-3 py-2 text-sm text-accent-red">
+            <div className="mb-3 shrink-0 rounded-2xl border border-rose-200 bg-rose-50/80 px-3 py-2 text-sm font-medium text-rose-600">
               {error}
             </div>
           )}
@@ -131,7 +135,7 @@ export function LeadRequestStatusPanel({
               <Loader2 className="h-6 w-6 animate-spin text-accent-blue" />
             </div>
           ) : requests.length === 0 ? (
-            <div className="flex flex-1 items-center justify-center rounded-btn border border-dashed border-border bg-bg-deep/30 px-4 py-8 text-center text-sm text-slate-500">
+            <div className="flex flex-1 items-center justify-center rounded-2xl border border-dashed border-indigo-200 bg-white/45 px-4 py-8 text-center text-sm text-slate-500">
               No lead generation requests yet. Use Generate Lead to start a job.
             </div>
           ) : (
@@ -141,11 +145,11 @@ export function LeadRequestStatusPanel({
                 key={request.requestID}
                 type="button"
                 onClick={() => setSelectedRequestId(request.requestID)}
-                className="flex w-full items-center gap-3 rounded-btn border border-border bg-bg-deep/30 px-4 py-3 text-left transition-colors hover:border-accent-blue/40 hover:bg-bg-deep/60"
+                className="flex w-full items-center gap-3 rounded-2xl border border-white/60 bg-white/50 px-4 py-3 text-left shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-white/80"
               >
                 <div className="min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">
-                    <p className="truncate text-sm font-medium text-white">
+                    <p className="truncate text-sm font-bold text-slate-900">
                       {request.query || `${request.businessType} · ${request.state}`}
                     </p>
                     <RequestStatusBadge
@@ -153,7 +157,7 @@ export function LeadRequestStatusPanel({
                       isRunning={request.isRunning}
                     />
                   </div>
-                  <p className="mt-1 text-xs text-slate-400">
+                  <p className="mt-1 text-xs text-slate-500">
                     {request.businessType} · {request.state}, {request.country} ·{' '}
                     {request.inserted}/{request.numberOfLeads} leads ·{' '}
                     {formatRelativeTime(request.startedAt)}

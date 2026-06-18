@@ -24,7 +24,7 @@ function statusColor(status?: MiniMetric['status']): string {
     case 'bad':
       return 'text-accent-red';
     default:
-      return 'text-white';
+      return 'text-slate-950';
   }
 }
 
@@ -50,7 +50,7 @@ function QuadrantCard({
   return (
     <div
       className={cn(
-        'flex flex-col rounded-card border bg-bg-surface p-5',
+        'widget-card flex flex-col p-5',
         accentBorder
       )}
     >
@@ -63,7 +63,7 @@ function QuadrantCard({
         >
           {badge}
         </span>
-        <div className={cn('flex h-8 w-8 items-center justify-center rounded-btn bg-bg-deep')}>
+        <div className="flex h-8 w-8 items-center justify-center rounded-2xl bg-white/60 shadow-sm backdrop-blur">
           <Icon className={cn('h-4 w-4', iconColor)} />
         </div>
       </div>
@@ -76,7 +76,7 @@ function QuadrantCard({
       </p>
       <p className="mb-4 text-xs text-slate-400">{primary.label}</p>
 
-      <div className="mt-auto grid grid-cols-1 gap-2 border-t border-border pt-4">
+      <div className="mt-auto grid grid-cols-1 gap-2 border-t border-white/60 pt-4">
         {secondary.map((m) => (
           <div key={m.label} className="flex items-baseline justify-between gap-2">
             <span className="text-xs text-slate-400">{m.label}</span>
@@ -165,11 +165,11 @@ export function QuadrantStats({ data }: QuadrantStatsProps) {
 
       <QuadrantCard
         badge="Diagnostic"
-        badgeColor="bg-slate-500/10 text-slate-300"
-        accentBorder="border-border"
+        badgeColor="bg-slate-100/80 text-slate-600"
+        accentBorder="border-white/60"
         title="Conversion Ratios"
         icon={Gauge}
-        iconColor="text-slate-300"
+        iconColor="text-slate-500"
         primary={{
           value: `${diagnostic.repliedToMeeting}%`,
           label: 'Replied \u2192 Meeting (the critical link)',
@@ -195,7 +195,7 @@ export function QuadrantStats({ data }: QuadrantStatsProps) {
       <QuadrantCard
         badge="Alerts"
         badgeColor="bg-accent-red/10 text-accent-red"
-        accentBorder={cn(alerts.total > 0 ? 'border-accent-red/40' : 'border-border')}
+        accentBorder={cn(alerts.total > 0 ? 'border-accent-red/40' : 'border-white/60')}
         title="Action Items"
         icon={AlertTriangle}
         iconColor="text-accent-red"

@@ -12,7 +12,7 @@ interface MetricChainProps {
 function colorForStep(key: MetricChainStep['key']): { dot: string; text: string; bar: string } {
   switch (key) {
     case 'discovered':
-      return { dot: 'bg-slate-500', text: 'text-slate-300', bar: 'bg-slate-500' };
+      return { dot: 'bg-slate-500', text: 'text-slate-700', bar: 'bg-slate-500' };
     case 'sent':
       return { dot: 'bg-accent-blue', text: 'text-accent-blue', bar: 'bg-accent-blue' };
     case 'responded':
@@ -30,16 +30,16 @@ function conversionBadge(value: number): string {
   if (value >= 50) return 'text-accent-green border-accent-green/30 bg-accent-green/10';
   if (value >= 20) return 'text-accent-amber border-accent-amber/30 bg-accent-amber/10';
   if (value > 0) return 'text-accent-red border-accent-red/30 bg-accent-red/10';
-  return 'text-slate-500 border-border bg-bg-deep';
+  return 'text-slate-500 border-white/60 bg-white/55';
 }
 
 export function MetricChain({ chain }: MetricChainProps) {
   const max = Math.max(...chain.map((s) => s.count), 1);
 
   return (
-    <section className="rounded-card border border-border bg-bg-surface p-6">
+    <section className="widget-card p-6">
       <div className="mb-1 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Metric Chain</h2>
+        <h2 className="text-lg font-extrabold text-slate-950">Metric Chain</h2>
         <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
           Cause &rarr; Effect
         </span>
@@ -62,7 +62,7 @@ export function MetricChain({ chain }: MetricChainProps) {
                     {step.label}
                   </p>
                 </div>
-                <div className="relative flex h-28 items-end overflow-hidden rounded-btn bg-bg-deep">
+                <div className="relative flex h-28 items-end overflow-hidden rounded-2xl bg-white/55 shadow-inner backdrop-blur">
                   <div
                     className={cn('w-full transition-all duration-500', colors.bar)}
                     style={{ height: `${Math.max(heightPct, step.count > 0 ? 8 : 0)}%` }}
@@ -111,7 +111,7 @@ export function MetricChain({ chain }: MetricChainProps) {
                     {step.count}
                   </p>
                 </div>
-                <div className="mt-1 h-2 overflow-hidden rounded-full bg-bg-deep">
+                <div className="mt-1 h-2 overflow-hidden rounded-full bg-white/55 shadow-inner backdrop-blur">
                   <div
                     className={cn('h-full', colors.bar)}
                     style={{ width: `${(step.count / max) * 100}%` }}

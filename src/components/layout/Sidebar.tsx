@@ -27,7 +27,7 @@ export function Sidebar({ activeNav = 'Dashboard' }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'hidden shrink-0 flex-col border-r border-border bg-bg-surface transition-all duration-300 lg:flex',
+        'hidden shrink-0 flex-col border-r border-white/50 bg-white/55 shadow-[20px_0_80px_rgba(79,70,229,0.08)] backdrop-blur-[20px] transition-all duration-300 lg:flex',
         collapsed ? 'w-16' : 'w-60'
       )}
     >
@@ -35,7 +35,7 @@ export function Sidebar({ activeNav = 'Dashboard' }: SidebarProps) {
         <button
           type="button"
           onClick={() => setCollapsed(!collapsed)}
-          className="rounded-btn p-1.5 text-slate-400 transition-colors hover:bg-bg-base hover:text-white active:scale-95"
+          className="rounded-2xl p-1.5 text-slate-400 transition-colors hover:bg-white/70 hover:text-indigo-600 active:scale-95"
           aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
         >
           <ChevronLeft
@@ -50,10 +50,10 @@ export function Sidebar({ activeNav = 'Dashboard' }: SidebarProps) {
             key={label}
             href="#"
             className={cn(
-              'flex items-center gap-3 rounded-r-btn px-3 py-2.5 text-sm transition-colors',
+              'flex items-center gap-3 rounded-r-2xl px-3 py-2.5 text-sm font-semibold transition-colors',
               activeNav === label
-                ? 'border-l-2 border-accent-blue bg-accent-blue/10 text-accent-blue'
-                : 'border-l-2 border-transparent text-slate-400 hover:bg-bg-base/50 hover:text-slate-200'
+                ? 'border-l-2 border-indigo-600 bg-indigo-50 text-indigo-600'
+                : 'border-l-2 border-transparent text-slate-400 hover:bg-white/70 hover:text-indigo-600'
             )}
           >
             <Icon className="h-5 w-5 shrink-0" />

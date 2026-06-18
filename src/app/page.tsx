@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Download, RefreshCw, Sparkles } from 'lucide-react';
+import { Bell, Download, RefreshCw, Search, Sparkles } from 'lucide-react';
 import { AnalyticsView } from '@/components/analytics/AnalyticsView';
 import { GenerateLeadModal } from '@/components/dashboard/GenerateLeadModal';
 import {
@@ -28,7 +28,7 @@ interface LeadsApiResponse {
 }
 
 const PAGE_TITLE: Record<NavLink, string> = {
-  Dashboard: 'Sales Automation',
+  Dashboard: 'Dashboard Overview',
   Leads: 'All Leads',
   Analytics: 'Predictive Analytics',
 };
@@ -50,7 +50,6 @@ export default function Home() {
   const [healthFilter, setHealthFilter] = useState<HealthFilter>('ALL');
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [generateLeadOpen, setGenerateLeadOpen] = useState(false);
-  const [statusRefreshKey, setStatusRefreshKey] = useState(0);
   const [leadsPage, setLeadsPage] = useState(1);
 
   const applyLeadsResponse = useCallback((data: LeadsApiResponse) => {
@@ -112,7 +111,11 @@ export default function Home() {
   }, [applyLeadsResponse, leads.length]);
 
   useEffect(() => {
-    void loadLeads({ initial: true });
+    const timer = window.setTimeout(() => {
+      void loadLeads({ initial: true });
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [loadLeads]);
 
   const filteredLeads = useMemo(() => {
@@ -130,19 +133,28 @@ export default function Home() {
     });
   }, [leads, searchTerm, statusFilter, healthFilter]);
 
-  useEffect(() => {
-    setLeadsPage(1);
-  }, [searchTerm, statusFilter, healthFilter]);
+  const maxLeadsPage = Math.max(1, Math.ceil(filteredLeads.length / LEADS_PAGE_SIZE));
+  const currentLeadsPage = Math.min(leadsPage, maxLeadsPage);
 
-  useEffect(() => {
-    const maxPage = Math.max(1, Math.ceil(filteredLeads.length / LEADS_PAGE_SIZE));
-    if (leadsPage > maxPage) setLeadsPage(maxPage);
-  }, [filteredLeads.length, leadsPage]);
+  const handleSearchChange = useCallback((value: string) => {
+    setSearchTerm(value);
+    setLeadsPage(1);
+  }, []);
+
+  const handleStatusChange = useCallback((value: StatusFilter) => {
+    setStatusFilter(value);
+    setLeadsPage(1);
+  }, []);
+
+  const handleHealthChange = useCallback((value: HealthFilter) => {
+    setHealthFilter(value);
+    setLeadsPage(1);
+  }, []);
 
   const paginatedLeads = useMemo(() => {
-    const start = (leadsPage - 1) * LEADS_PAGE_SIZE;
+    const start = (currentLeadsPage - 1) * LEADS_PAGE_SIZE;
     return filteredLeads.slice(start, start + LEADS_PAGE_SIZE);
-  }, [filteredLeads, leadsPage]);
+  }, [filteredLeads, currentLeadsPage]);
 
   const showLoadingSkeleton = loading && leads.length === 0;
   const displayKpi = kpi ?? computeKPI(leads);
@@ -152,19 +164,41 @@ export default function Home() {
       : undefined;
 
   return (
-    <div className="flex min-h-screen flex-col">
+    <div className="mesh-bg flex min-h-screen">
       <Header activeNav={activeNav} onNavChange={setActiveNav} />
 
-      <div className="flex flex-1">
-        <main className="flex-1 overflow-auto p-4 lg:p-6">
-          <section className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      <div className="min-w-0 flex-1">
+        <main className="min-h-screen overflow-auto px-4 py-6 sm:px-6 lg:px-10">
+          <section className="mb-8 flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
-              <h1 className="text-3xl font-bold text-white">{PAGE_TITLE[activeNav]}</h1>
-              {PAGE_SUBTITLE[activeNav] && (
-                <p className="mt-1 text-sm text-slate-400">{PAGE_SUBTITLE[activeNav]}</p>
-              )}
+              <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-indigo-600">
+                Welcome back, EdFoal
+              </p>
+              <h1 className="text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">
+                {PAGE_TITLE[activeNav]}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm text-slate-500">
+                {PAGE_SUBTITLE[activeNav] ??
+                  'Premium sales automation, lead tracking, and revenue signals in one glass dashboard.'}
+              </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <label className="flex h-12 w-full items-center gap-3 rounded-2xl border border-white/60 bg-white/70 px-4 text-slate-500 shadow-sm backdrop-blur-md sm:w-80">
+                <Search className="h-4 w-4 shrink-0" />
+                <input
+                  value={searchTerm}
+                  onChange={(e) => handleSearchChange(e.target.value)}
+                  placeholder="Search leads, projects..."
+                  className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
+                />
+              </label>
+              <button
+                type="button"
+                aria-label="Notifications"
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/60 bg-white/65 text-slate-500 shadow-sm backdrop-blur-md transition-all hover:-translate-y-0.5 hover:text-indigo-600 hover:shadow-lg hover:shadow-indigo-600/10"
+              >
+                <Bell className="h-5 w-5" />
+              </button>
               <GlowButton
                 variant="ghost"
                 icon={RefreshCw}
@@ -183,10 +217,9 @@ export default function Home() {
               </GlowButton>
               {activeNav === 'Dashboard' && (
                 <GlowButton
-                  variant="ghost"
+                  variant="primary"
                   icon={Sparkles}
                   onClick={() => setGenerateLeadOpen(true)}
-                  className="border-accent-amber/40 text-accent-amber hover:bg-accent-amber/10 hover:text-accent-amber"
                 >
                   Generate Lead
                 </GlowButton>
@@ -195,9 +228,9 @@ export default function Home() {
           </section>
 
           {error && (
-            <div className="mb-6 rounded-card border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300">
+            <div className="mb-6 rounded-2xl border border-red-200 bg-red-50/80 px-4 py-3 text-sm text-red-700 backdrop-blur">
               <p className="font-medium">Couldn&apos;t load leads</p>
-              <p className="mt-1 text-red-200/80">{error}</p>
+              <p className="mt-1 text-red-600/80">{error}</p>
             </div>
           )}
 
@@ -207,18 +240,17 @@ export default function Home() {
                 {[0, 1, 2].map((i) => (
                   <div
                     key={i}
-                    className="h-28 animate-pulse rounded-card border border-border bg-bg-surface"
+                    className="h-28 animate-pulse rounded-4xl border border-white/50 bg-white/55 backdrop-blur-xl"
                   />
                 ))}
               </div>
-              <div className="h-40 animate-pulse rounded-card border border-border bg-bg-surface" />
-              <div className="h-64 animate-pulse rounded-card border border-border bg-bg-surface" />
+              <div className="h-40 animate-pulse rounded-4xl border border-white/50 bg-white/55 backdrop-blur-xl" />
+              <div className="h-64 animate-pulse rounded-4xl border border-white/50 bg-white/55 backdrop-blur-xl" />
             </div>
           ) : activeNav === 'Dashboard' ? (
             <DashboardView
               leads={leads}
               kpi={displayKpi}
-              statusRefreshKey={statusRefreshKey}
               onViewLead={setSelectedLead}
               onViewAllLeads={() => setActiveNav('Leads')}
             />
@@ -230,16 +262,16 @@ export default function Home() {
                 searchTerm={searchTerm}
                 statusFilter={statusFilter}
                 healthFilter={healthFilter}
-                onSearchChange={setSearchTerm}
-                onStatusChange={setStatusFilter}
-                onHealthChange={setHealthFilter}
+                onSearchChange={handleSearchChange}
+                onStatusChange={handleStatusChange}
+                onHealthChange={handleHealthChange}
               />
               <LeadsTable
                 leads={paginatedLeads}
                 emptyMessage={emptyTableMessage}
                 onView={setSelectedLead}
                 pagination={{
-                  page: leadsPage,
+                  page: currentLeadsPage,
                   pageSize: LEADS_PAGE_SIZE,
                   total: filteredLeads.length,
                   onPageChange: setLeadsPage,
@@ -255,7 +287,6 @@ export default function Home() {
         open={generateLeadOpen}
         onClose={() => setGenerateLeadOpen(false)}
         onGenerated={() => {
-          setStatusRefreshKey((key) => key + 1);
           void loadLeads();
           void pollForNewLeads();
         }}

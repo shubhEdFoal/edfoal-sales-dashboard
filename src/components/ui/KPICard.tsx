@@ -39,11 +39,11 @@ export function KPICard({ label, value, icon: Icon, color, delta, index = 0 }: K
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay: index * 0.1 }}
-      className="rounded-card border border-border bg-bg-surface p-5"
+      className="widget-card p-5"
     >
       <div className="mb-4 flex items-center justify-between">
         <div
-          className={cn('flex h-10 w-10 items-center justify-center rounded-btn', colors.iconBg)}
+          className={cn('flex h-10 w-10 items-center justify-center rounded-2xl', colors.iconBg)}
         >
           <Icon className={cn('h-5 w-5', colors.iconText)} />
         </div>
@@ -59,8 +59,8 @@ export function KPICard({ label, value, icon: Icon, color, delta, index = 0 }: K
         )}
       </div>
 
-      <p className="text-4xl font-bold text-white">{value}</p>
-      <p className="mt-1 text-sm text-slate-400">{label}</p>
+      <p className="text-4xl font-extrabold text-slate-950">{value}</p>
+      <p className="mt-1 text-sm text-slate-500">{label}</p>
     </motion.div>
   );
 }

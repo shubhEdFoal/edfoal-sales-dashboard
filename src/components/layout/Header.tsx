@@ -1,13 +1,17 @@
 'use client';
 
-import { Zap } from 'lucide-react';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { UserMenu } from '@/components/layout/UserMenu';
+import { BarChart3, LayoutDashboard, Users, Zap } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export const NAV_LINKS = ['Dashboard', 'Leads', 'Analytics'] as const;
 export type NavLink = (typeof NAV_LINKS)[number];
+
+const NAV_ICONS: Record<NavLink, LucideIcon> = {
+  Dashboard: LayoutDashboard,
+  Leads: Users,
+  Analytics: BarChart3,
+};
 
 interface HeaderProps {
   activeNav: NavLink;
@@ -15,57 +19,41 @@ interface HeaderProps {
 }
 
 export function Header({ activeNav, onNavChange }: HeaderProps) {
-  const router = useRouter();
-  const [loggingOut, setLoggingOut] = useState(false);
-
-  async function handleLogout() {
-    setLoggingOut(true);
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.replace('/login');
-      router.refresh();
-    } finally {
-      setLoggingOut(false);
-    }
-  }
-
   return (
-    <header className="sticky top-0 z-40 flex h-20 items-center border-b border-border bg-bg-base/90 px-4 backdrop-blur-md lg:px-6">
-      <div className="flex items-center gap-2">
-        <div className="flex h-9 w-9 items-center justify-center rounded-btn bg-accent-blue/10">
-          <Zap className="h-5 w-5 text-accent-blue" />
-        </div>
-        <div>
-          <p className="font-bold text-white">EdFoal</p>
-          <p className="font-mono text-xs text-slate-400">Sale Agents</p>
-        </div>
+    <aside className="sticky top-0 z-40 flex h-screen w-20 shrink-0 flex-col items-center border-r border-white/50 bg-white/55 px-3 py-5 shadow-[20px_0_80px_rgba(79,70,229,0.08)] backdrop-blur-[20px] sm:w-24">
+      <div className="animate-float flex h-12 w-12 items-center justify-center rounded-2xl bg-linear-to-br from-indigo-600 to-violet-500 text-white shadow-xl shadow-indigo-600/20">
+        <Zap className="h-6 w-6" />
       </div>
 
-      <div className="ml-auto flex items-center gap-4 md:gap-8">
-        <nav className="hidden items-center gap-8 md:flex">
-          {NAV_LINKS.map((link) => {
-            const isActive = activeNav === link;
-            return (
-              <button
-                key={link}
-                type="button"
-                onClick={() => onNavChange?.(link)}
-                className={cn(
-                  'relative text-sm transition-colors',
-                  isActive ? 'text-accent-blue' : 'text-slate-400 hover:text-slate-200'
-                )}
-              >
-                {link}
-                {isActive && (
-                  <span className="absolute -bottom-1 left-1/2 h-1 w-1 -translate-x-1/2 rounded-full bg-accent-blue" />
-                )}
-              </button>
-            );
-          })}
-        </nav>
+      <nav className="mt-10 flex flex-1 flex-col items-center gap-4">
+        {NAV_LINKS.map((link) => {
+          const isActive = activeNav === link;
+          const Icon = NAV_ICONS[link];
+          return (
+            <button
+              key={link}
+              type="button"
+              onClick={() => onNavChange?.(link)}
+              aria-label={link}
+              title={link}
+              className={cn(
+                'flex h-12 w-12 items-center justify-center rounded-2xl transition-all duration-300 ease-in-out active:scale-95',
+                isActive
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/25'
+                  : 'bg-white/40 text-slate-400 hover:-translate-y-1 hover:bg-white/75 hover:text-indigo-600 hover:shadow-lg hover:shadow-indigo-600/10'
+              )}
+            >
+              <Icon className="h-5 w-5" />
+            </button>
+          );
+        })}
+      </nav>
 
-        <UserMenu onLogout={() => void handleLogout()} loggingOut={loggingOut} />
+      <div className="rounded-full bg-linear-to-br from-indigo-500 via-violet-500 to-pink-500 p-0.5 shadow-lg shadow-indigo-600/20">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white text-xs font-bold text-indigo-600">
+          EF
+        </div>
       </div>
-    </header>
+    </aside>
   );
 }

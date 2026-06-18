@@ -37,10 +37,10 @@ export function AlertsPanel({ items }: AlertsPanelProps) {
   const totalActions = active.reduce((sum, i) => sum + i.count, 0);
 
   return (
-    <section className="rounded-card border border-border bg-bg-surface p-6">
+    <section className="widget-card p-6">
       <div className="mb-1 flex items-center justify-between">
-        <h2 className="text-lg font-semibold text-white">Alerts &amp; Action Items</h2>
-        <span className="rounded-full bg-bg-deep px-3 py-1 font-mono text-xs text-slate-400">
+        <h2 className="text-lg font-extrabold text-slate-950">Alerts &amp; Action Items</h2>
+        <span className="rounded-full border border-white/60 bg-white/55 px-3 py-1 font-mono text-xs font-semibold text-slate-500 backdrop-blur">
           {totalActions} total
         </span>
       </div>
@@ -50,10 +50,10 @@ export function AlertsPanel({ items }: AlertsPanelProps) {
       </p>
 
       {active.length === 0 ? (
-        <div className="flex items-center gap-3 rounded-btn border border-accent-green/30 bg-accent-green/5 px-4 py-4">
+        <div className="flex items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/70 px-4 py-4">
           <CheckCircle2 className="h-5 w-5 shrink-0 text-accent-green" />
           <div>
-            <p className="text-sm font-medium text-white">All clear</p>
+            <p className="text-sm font-bold text-slate-900">All clear</p>
             <p className="text-xs text-slate-400">
               No active alerts. Pipeline is healthy.
             </p>
@@ -67,13 +67,13 @@ export function AlertsPanel({ items }: AlertsPanelProps) {
             return (
               <li
                 key={item.id}
-                className={cn('rounded-btn border p-4', sev.ring)}
+                className={cn('rounded-2xl border p-4 backdrop-blur', sev.ring)}
               >
                 <div className="flex items-start gap-3">
                   <Icon className={cn('mt-0.5 h-5 w-5 shrink-0', sev.iconColor)} />
                   <div className="flex-1">
                     <div className="flex flex-wrap items-baseline justify-between gap-2">
-                      <p className="text-sm font-semibold text-white">{item.title}</p>
+                      <p className="text-sm font-bold text-slate-900">{item.title}</p>
                       <span
                         className={cn(
                           'rounded-full px-2 py-0.5 font-mono text-[10px] font-semibold',
@@ -84,7 +84,7 @@ export function AlertsPanel({ items }: AlertsPanelProps) {
                       </span>
                     </div>
                     <p className="mt-1 text-xs text-slate-400">{item.description}</p>
-                    <p className="mt-2 text-xs text-slate-300">
+                    <p className="mt-2 text-xs text-slate-600">
                       <span className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
                         Do this &rarr;{' '}
                       </span>

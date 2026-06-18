@@ -21,11 +21,11 @@ function DetailField({
   children: React.ReactNode;
 }) {
   return (
-    <div className="rounded-btn border border-border bg-bg-deep/40 p-3">
-      <div className="mb-1 text-[10px] font-medium uppercase tracking-wider text-slate-500">
+    <div className="rounded-2xl border border-white/60 bg-white/55 p-3 shadow-sm backdrop-blur">
+      <div className="mb-1 text-[10px] font-bold uppercase tracking-wider text-slate-500">
         {label}
       </div>
-      <div className="text-sm text-slate-100">{children}</div>
+      <div className="text-sm text-slate-700">{children}</div>
     </div>
   );
 }
@@ -44,33 +44,36 @@ export function LeadRequestDetailModal({ requestId, onClose }: LeadRequestDetail
     if (!requestId) return;
 
     let cancelled = false;
-    setLoading(true);
-    setError(null);
-    setRequest(null);
+    const timer = window.setTimeout(() => {
+      setLoading(true);
+      setError(null);
+      setRequest(null);
 
-    fetch(`/api/status/${encodeURIComponent(requestId)}`, { cache: 'no-store' })
-      .then(async (res) => {
-        const data = (await res.json()) as {
-          success?: boolean;
-          request?: LeadGenerationRequest;
-          error?: string;
-        };
-        if (!res.ok || !data.request) {
-          throw new Error(data.error ?? 'Failed to load request details');
-        }
-        if (!cancelled) setRequest(data.request);
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : 'Failed to load request details');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
+      fetch(`/api/status/${encodeURIComponent(requestId)}`, { cache: 'no-store' })
+        .then(async (res) => {
+          const data = (await res.json()) as {
+            success?: boolean;
+            request?: LeadGenerationRequest;
+            error?: string;
+          };
+          if (!res.ok || !data.request) {
+            throw new Error(data.error ?? 'Failed to load request details');
+          }
+          if (!cancelled) setRequest(data.request);
+        })
+        .catch((err) => {
+          if (!cancelled) {
+            setError(err instanceof Error ? err.message : 'Failed to load request details');
+          }
+        })
+        .finally(() => {
+          if (!cancelled) setLoading(false);
+        });
+    }, 0);
 
     return () => {
       cancelled = true;
+      window.clearTimeout(timer);
     };
   }, [requestId]);
 
@@ -98,7 +101,7 @@ export function LeadRequestDetailModal({ requestId, onClose }: LeadRequestDetail
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
         transition={{ duration: 0.15 }}
-        className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+        className="fixed inset-0 z-60 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm"
         onClick={onClose}
       >
         <motion.div
@@ -107,19 +110,19 @@ export function LeadRequestDetailModal({ requestId, onClose }: LeadRequestDetail
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.96, y: 10 }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-card border border-border bg-bg-surface shadow-2xl"
+          className="relative max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-4xl border border-white/60 bg-white/75 shadow-2xl shadow-indigo-600/10 backdrop-blur-[28px]"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-bg-surface/95 px-6 py-4 backdrop-blur">
+          <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-white/60 bg-white/80 px-6 py-4 backdrop-blur-xl">
             <div>
-              <h2 className="text-lg font-semibold text-white">Lead generation request</h2>
+              <h2 className="text-lg font-extrabold text-slate-950">Lead generation request</h2>
               <p className="mt-1 font-mono text-xs text-slate-500">{requestId}</p>
             </div>
             <button
               type="button"
               onClick={onClose}
               aria-label="Close"
-              className="flex h-8 w-8 items-center justify-center rounded-btn border border-border text-slate-400 transition-colors hover:bg-bg-deep hover:text-white"
+              className="flex h-8 w-8 items-center justify-center rounded-2xl border border-white/60 bg-white/55 text-slate-500 transition-all hover:-translate-y-0.5 hover:bg-rose-50 hover:text-rose-600"
             >
               <X className="h-4 w-4" />
             </button>
@@ -133,7 +136,7 @@ export function LeadRequestDetailModal({ requestId, onClose }: LeadRequestDetail
             )}
 
             {error && (
-              <div className="rounded-btn border border-accent-red/30 bg-accent-red/10 px-3 py-2 text-sm text-accent-red">
+              <div className="rounded-2xl border border-rose-200 bg-rose-50/80 px-3 py-2 text-sm font-medium text-rose-600">
                 {error}
               </div>
             )}
@@ -142,7 +145,7 @@ export function LeadRequestDetailModal({ requestId, onClose }: LeadRequestDetail
               <>
                 <div className="flex flex-wrap items-center gap-2">
                   <RequestStatusBadge status={request.status} isRunning={request.isRunning} />
-                  <span className="rounded-full bg-bg-deep px-2.5 py-1 text-xs text-slate-300">
+                  <span className="rounded-full border border-white/60 bg-white/55 px-2.5 py-1 text-xs font-semibold text-slate-600 backdrop-blur">
                     {request.inserted}/{request.numberOfLeads} inserted
                   </span>
                 </div>
@@ -163,7 +166,7 @@ export function LeadRequestDetailModal({ requestId, onClose }: LeadRequestDetail
                 </div>
 
                 {request.error && (
-                  <div className="rounded-btn border border-accent-red/30 bg-accent-red/10 px-3 py-2 text-sm text-accent-red">
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50/80 px-3 py-2 text-sm font-medium text-rose-600">
                     {request.error}
                   </div>
                 )}

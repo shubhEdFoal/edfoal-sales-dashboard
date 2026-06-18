@@ -29,7 +29,7 @@ const INITIAL_STATE: FormState = {
 };
 
 const FIELD_CLS =
-  'w-full rounded-btn border border-border bg-bg-deep px-3 py-2 text-sm text-white placeholder:text-slate-600 focus:border-accent-blue focus:outline-none focus:ring-1 focus:ring-accent-blue';
+  'w-full rounded-2xl border border-white/60 bg-white/65 px-3 py-2.5 text-sm text-slate-800 shadow-sm backdrop-blur placeholder:text-slate-400 focus:border-indigo-300 focus:outline-none focus:ring-2 focus:ring-indigo-500/15';
 
 function FieldLabel({
   label,
@@ -40,7 +40,7 @@ function FieldLabel({
 }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-[10px] font-medium uppercase tracking-wider text-slate-400">
+      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
         {label}
       </span>
       {children}
@@ -59,12 +59,16 @@ export function GenerateLeadModal({
   const [success, setSuccess] = useState<string | null>(null);
 
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+
+    const timer = window.setTimeout(() => {
       setForm(INITIAL_STATE);
       setError(null);
       setSuccess(null);
       setSubmitting(false);
-    }
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [open]);
 
   useEffect(() => {
@@ -173,7 +177,7 @@ export function GenerateLeadModal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/35 p-4 backdrop-blur-sm"
           onClick={() => !closeDisabled && onClose()}
         >
           <motion.div
@@ -182,17 +186,17 @@ export function GenerateLeadModal({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 10 }}
             transition={{ duration: 0.2, ease: 'easeOut' }}
-            className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-card border border-border bg-bg-surface shadow-2xl"
+            className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-4xl border border-white/60 bg-white/75 shadow-2xl shadow-indigo-600/10 backdrop-blur-[28px]"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-border bg-bg-surface/95 px-6 py-4 backdrop-blur">
+            <div className="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-white/60 bg-white/80 px-6 py-4 backdrop-blur-xl">
               <div className="flex items-start gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-btn bg-accent-amber/10">
-                  <Sparkles className="h-5 w-5 text-accent-amber" />
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-amber-50 text-amber-600">
+                  <Sparkles className="h-5 w-5" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-white">Generate leads</h2>
-                  <p className="text-xs text-slate-400">
+                  <h2 className="text-lg font-extrabold text-slate-950">Generate leads</h2>
+                  <p className="text-xs text-slate-500">
                     Fill in the criteria and generate.
                   </p>
                 </div>
@@ -202,18 +206,18 @@ export function GenerateLeadModal({
                 onClick={onClose}
                 disabled={closeDisabled}
                 aria-label="Close"
-                className="flex h-8 w-8 items-center justify-center rounded-btn border border-border text-slate-400 transition-colors hover:bg-bg-deep hover:text-white disabled:opacity-50"
+                className="flex h-8 w-8 items-center justify-center rounded-2xl border border-white/60 bg-white/55 text-slate-500 transition-all hover:-translate-y-0.5 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-50"
               >
                 <X className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="flex items-start gap-2 border-b border-border bg-accent-amber/5 px-6 py-3">
+            <div className="flex items-start gap-2 border-b border-white/60 bg-amber-50/65 px-6 py-3">
               <Clock className="mt-0.5 h-4 w-4 shrink-0 text-accent-amber" />
-              <p className="text-xs text-slate-300">
+              <p className="text-xs text-slate-600">
                 <span className="font-medium text-accent-amber">Heads up:</span> Finding leads
                 takes a few minutes. Track the job in{' '}
-                <span className="font-medium text-white">Lead generation status</span> on the
+                <span className="font-semibold text-slate-900">Lead generation status</span> on the
                 dashboard — click Refresh when it completes to load new leads.
               </p>
             </div>
@@ -291,22 +295,22 @@ export function GenerateLeadModal({
                 </div>
 
                 {error && (
-                  <div className="rounded-btn border border-accent-red/30 bg-accent-red/10 px-3 py-2 text-sm text-accent-red">
+                  <div className="rounded-2xl border border-rose-200 bg-rose-50/80 px-3 py-2 text-sm font-medium text-rose-600">
                     {error}
                   </div>
                 )}
                 {success && (
-                  <div className="rounded-btn border border-accent-green/30 bg-accent-green/10 px-3 py-2 text-sm text-accent-green">
+                  <div className="rounded-2xl border border-emerald-200 bg-emerald-50/80 px-3 py-2 text-sm font-medium text-emerald-600">
                     {success}
                   </div>
                 )}
 
-                <div className="flex items-center justify-end gap-2 border-t border-border pt-4">
+                <div className="flex items-center justify-end gap-2 border-t border-white/60 pt-4">
                   <button
                     type="button"
                     onClick={onClose}
                     disabled={closeDisabled}
-                    className="rounded-btn border border-border px-4 py-2 text-sm text-slate-300 transition-colors hover:bg-bg-deep hover:text-white disabled:opacity-50"
+                    className="rounded-2xl border border-white/60 bg-white/55 px-4 py-2 text-sm font-semibold text-slate-700 transition-colors hover:bg-white/80 hover:text-indigo-600 disabled:opacity-50"
                   >
                     Close
                   </button>
@@ -314,10 +318,10 @@ export function GenerateLeadModal({
                     type="submit"
                     disabled={submitting || success !== null}
                     className={cn(
-                      'inline-flex items-center gap-2 rounded-btn bg-accent-amber px-4 py-2 text-sm font-medium text-bg-deep transition-all',
+                      'inline-flex items-center gap-2 rounded-2xl bg-linear-to-r from-indigo-600 to-violet-500 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-indigo-600/20 transition-all',
                       submitting || success !== null
                         ? 'cursor-not-allowed opacity-60'
-                        : 'hover:shadow-[0_0_20px_rgba(245,158,11,0.5)] active:scale-95'
+                        : 'hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-600/25 active:scale-95'
                     )}
                   >
                     {submitting ? (
