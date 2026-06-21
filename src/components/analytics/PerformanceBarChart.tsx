@@ -43,13 +43,13 @@ export function PerformanceBarChart({
   const hasData = populated.length > 0;
 
   return (
-    <section className="rounded-card border border-border bg-bg-surface p-6">
+    <section className="widget-card p-6">
       <div className="mb-4 flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-white">{title}</h2>
-          {subtitle && <p className="mt-1 text-xs text-slate-400">{subtitle}</p>}
+          <h2 className="text-lg font-extrabold text-slate-950">{title}</h2>
+          {subtitle && <p className="mt-1 text-xs text-slate-500">{subtitle}</p>}
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-[10px] font-medium uppercase tracking-wider text-slate-400">
+        <div className="flex flex-wrap items-center gap-3 text-[10px] font-bold uppercase tracking-wider text-slate-500">
           {METRIC_DEFS.map((m) => (
             <div key={m.key} className="flex items-center gap-1.5">
               <span className={cn('h-2 w-2 rounded-sm', m.bar)} />
@@ -60,7 +60,7 @@ export function PerformanceBarChart({
       </div>
 
       {!hasData ? (
-        <p className="rounded-btn border border-dashed border-border bg-bg-deep px-4 py-6 text-center text-xs text-slate-500">
+        <p className="rounded-2xl border border-dashed border-indigo-200 bg-white/45 px-4 py-6 text-center text-xs text-slate-500">
           {emptyMessage ?? 'Not enough data yet for this breakdown.'}
         </p>
       ) : (
@@ -73,8 +73,8 @@ export function PerformanceBarChart({
                 className={cn('space-y-2', isEmpty && 'opacity-40')}
               >
                 <div className="flex items-baseline justify-between">
-                  <p className="text-sm font-medium text-white">{row.label}</p>
-                  <p className="font-mono text-[10px] uppercase tracking-wider text-slate-400">
+                  <p className="text-sm font-bold text-slate-800">{row.label}</p>
+                  <p className="font-mono text-[10px] uppercase tracking-wider text-slate-500">
                     n = {row.total}
                   </p>
                 </div>
@@ -85,7 +85,7 @@ export function PerformanceBarChart({
                     const widthPct = (value / maxRate) * 100;
                     return (
                       <div key={m.key} className="flex items-center gap-3">
-                        <div className="relative h-4 flex-1 overflow-hidden rounded-btn bg-bg-deep">
+                        <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-white/55 shadow-inner backdrop-blur">
                           <div
                             className={cn('h-full transition-all duration-500', m.bar)}
                             style={{

@@ -41,6 +41,7 @@ function mapHealth(health: string | null | undefined, hasEmail: boolean): Campai
 
 function mapStatus(item: ApiResultItem): LeadStatus {
   const response = (item.response ?? '').trim().toLowerCase();
+  if (parseYesNo(item.schedulingSent)) return 'MEETING_BOOKED';
   if (response.includes('meeting')) return 'MEETING_BOOKED';
   if (response.includes('qualif')) return 'QUALIFIED';
   if (response) return 'REPLIED';

@@ -8,25 +8,25 @@ const STATUS_STYLES: Record<
 > = {
   running: {
     label: 'Running',
-    bg: 'bg-accent-amber/15 text-accent-amber',
+    bg: 'border-amber-200 bg-amber-50/80 text-amber-600',
     dot: 'bg-accent-amber',
     pulse: true,
   },
   completed: {
     label: 'Completed',
-    bg: 'bg-accent-green/15 text-accent-green',
+    bg: 'border-emerald-200 bg-emerald-50/80 text-emerald-600',
     dot: 'bg-accent-green',
     pulse: false,
   },
   failed: {
     label: 'Failed',
-    bg: 'bg-accent-red/15 text-accent-red',
+    bg: 'border-rose-200 bg-rose-50/80 text-rose-600',
     dot: 'bg-accent-red',
     pulse: false,
   },
   error: {
     label: 'Error',
-    bg: 'bg-accent-red/15 text-accent-red',
+    bg: 'border-rose-200 bg-rose-50/80 text-rose-600',
     dot: 'bg-accent-red',
     pulse: false,
   },
@@ -41,7 +41,7 @@ export function RequestStatusBadge({ status, isRunning }: RequestStatusBadgeProp
   const key = isRunning ? 'running' : status.trim().toLowerCase();
   const config = STATUS_STYLES[key] ?? {
     label: status || 'Unknown',
-    bg: 'bg-slate-500/15 text-slate-300',
+    bg: 'border-slate-200 bg-slate-50/80 text-slate-600',
     dot: 'bg-slate-400',
     pulse: false,
   };
@@ -49,7 +49,7 @@ export function RequestStatusBadge({ status, isRunning }: RequestStatusBadgeProp
   return (
     <span
       className={cn(
-        'inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium capitalize',
+        'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-bold capitalize shadow-sm backdrop-blur',
         config.bg
       )}
     >

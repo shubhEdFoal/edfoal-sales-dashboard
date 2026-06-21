@@ -33,18 +33,18 @@ export function TablePagination({
   return (
     <div
       className={cn(
-        'flex flex-col gap-3 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between',
+        'flex flex-col gap-3 border-t border-white/55 bg-white/35 px-4 py-3 backdrop-blur sm:flex-row sm:items-center sm:justify-between',
         className
       )}
     >
-      <p className="text-sm text-slate-400">
+      <p className="text-sm text-slate-500">
         {total === 0 ? (
           'No results'
         ) : (
           <>
-            Showing <span className="font-medium text-slate-200">{start}</span>–
-            <span className="font-medium text-slate-200">{end}</span> of{' '}
-            <span className="font-medium text-slate-200">{total}</span>
+            Showing <span className="font-bold text-slate-800">{start}</span>–
+            <span className="font-bold text-slate-800">{end}</span> of{' '}
+            <span className="font-bold text-slate-800">{total}</span>
           </>
         )}
       </p>
@@ -55,7 +55,7 @@ export function TablePagination({
           onClick={() => goTo(safePage - 1)}
           disabled={safePage <= 1}
           aria-label="Previous page"
-          className="flex h-8 w-8 items-center justify-center rounded-btn border border-border text-slate-400 transition-colors hover:bg-bg-deep hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-8 w-8 items-center justify-center rounded-2xl border border-white/60 bg-white/55 text-slate-500 shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:bg-indigo-50 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronLeft className="h-4 w-4" />
         </button>
@@ -73,10 +73,10 @@ export function TablePagination({
               aria-label={`Page ${p}`}
               aria-current={p === safePage ? 'page' : undefined}
               className={cn(
-                'flex h-8 min-w-8 items-center justify-center rounded-btn px-2 text-sm transition-colors',
+                'flex h-8 min-w-8 items-center justify-center rounded-2xl px-2 text-sm font-semibold transition-all',
                 p === safePage
-                  ? 'bg-accent-blue/15 font-medium text-accent-blue'
-                  : 'border border-border text-slate-400 hover:bg-bg-deep hover:text-white'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
+                  : 'border border-white/60 bg-white/55 text-slate-500 hover:-translate-y-0.5 hover:bg-indigo-50 hover:text-indigo-600'
               )}
             >
               {p}
@@ -89,7 +89,7 @@ export function TablePagination({
           onClick={() => goTo(safePage + 1)}
           disabled={safePage >= totalPages}
           aria-label="Next page"
-          className="flex h-8 w-8 items-center justify-center rounded-btn border border-border text-slate-400 transition-colors hover:bg-bg-deep hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-8 w-8 items-center justify-center rounded-2xl border border-white/60 bg-white/55 text-slate-500 shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:bg-indigo-50 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <ChevronRight className="h-4 w-4" />
         </button>

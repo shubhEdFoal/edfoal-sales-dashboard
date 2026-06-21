@@ -12,6 +12,7 @@ interface LeadsTableProps {
   leads: Lead[];
   emptyMessage?: string;
   compact?: boolean;
+  embedded?: boolean;
   onView?: (lead: Lead) => void;
   pagination?: {
     page: number;
@@ -23,9 +24,9 @@ interface LeadsTableProps {
 
 function CellText({ value, mono = false }: { value: string | null | undefined; mono?: boolean }) {
   const text = value?.trim();
-  if (!text) return <span className="text-slate-600">—</span>;
+  if (!text) return <span className="text-slate-400">—</span>;
   return (
-    <span className={cn('text-sm text-slate-200', mono && 'font-mono text-xs')}>{text}</span>
+    <span className={cn('text-sm text-slate-700', mono && 'font-mono text-xs')}>{text}</span>
   );
 }
 
@@ -35,7 +36,8 @@ function CellLink({ href, label }: { href: string; label: string }) {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="inline-flex max-w-[220px] items-center gap-1 truncate text-xs text-accent-blue hover:underline"
+      onClick={(e) => e.stopPropagation()}
+      className="inline-flex max-w-[220px] items-center gap-1 truncate text-xs font-semibold text-indigo-600 hover:underline"
       title={label}
     >
       <span className="truncate">{label}</span>
@@ -70,7 +72,7 @@ const TABLE_COLUMNS: ColumnDef[] = [
     label: 'BUSINESS',
     minWidth: '200px',
     render: (lead) => (
-      <span className="block max-w-[240px] truncate text-sm font-semibold text-white">
+      <span className="block max-w-[240px] truncate text-sm font-bold text-slate-950">
         {lead.businessName}
       </span>
     ),
@@ -86,7 +88,8 @@ const TABLE_COLUMNS: ColumnDef[] = [
       return (
         <a
           href={`mailto:${primary}`}
-          className="inline-flex max-w-[220px] items-center gap-1 truncate font-mono text-xs text-slate-300 hover:text-accent-blue"
+          onClick={(e) => e.stopPropagation()}
+          className="inline-flex max-w-[220px] items-center gap-1 truncate font-mono text-xs text-slate-600 hover:text-indigo-600"
         >
           {emails.length > 1 ? `${primary} (+${emails.length - 1})` : primary}
         </a>
@@ -118,7 +121,7 @@ const TABLE_COLUMNS: ColumnDef[] = [
     label: 'ADDRESS',
     minWidth: '220px',
     render: (lead) => (
-      <span className="block max-w-[260px] truncate text-sm text-slate-200">
+      <span className="block max-w-[260px] truncate text-sm text-slate-700">
         {lead.address || '—'}
       </span>
     ),
@@ -152,7 +155,7 @@ const TABLE_COLUMNS: ColumnDef[] = [
     label: 'EMAIL TONE',
     minWidth: '120px',
     render: (lead) => (
-      <span className="rounded-full bg-bg-deep px-2.5 py-1 text-xs text-slate-300">
+      <span className="rounded-full border border-white/60 bg-white/60 px-2.5 py-1 text-xs font-semibold text-slate-600 backdrop-blur">
         {lead.emailStyle}
       </span>
     ),
@@ -210,7 +213,7 @@ const TABLE_COLUMNS: ColumnDef[] = [
     label: 'REQUEST ID',
     minWidth: '180px',
     render: (lead) => (
-      <span className="block max-w-[200px] truncate font-mono text-xs text-slate-400">
+      <span className="block max-w-[200px] truncate font-mono text-xs text-slate-500">
         {lead.requestID || '—'}
       </span>
     ),
@@ -220,7 +223,7 @@ const TABLE_COLUMNS: ColumnDef[] = [
     label: 'SCRAPED AT',
     minWidth: '160px',
     render: (lead) => (
-      <span className="whitespace-nowrap text-xs text-slate-300">
+      <span className="whitespace-nowrap text-xs text-slate-500">
         {formatDate(lead.timestamp)}
       </span>
     ),
@@ -249,6 +252,7 @@ export function LeadsTable({
   leads,
   emptyMessage,
   compact = false,
+  embedded = false,
   onView,
   pagination,
 }: LeadsTableProps) {
@@ -263,9 +267,12 @@ export function LeadsTable({
           type="button"
           aria-label="View details"
           title="View details"
-          onClick={() => onView?.(lead)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onView?.(lead);
+          }}
           className={cn(
-            'flex items-center justify-center rounded-btn border border-border text-slate-400 transition-colors hover:border-accent-blue/40 hover:bg-accent-blue/10 hover:text-accent-blue active:scale-95',
+            'flex items-center justify-center rounded-2xl border border-white/60 bg-white/50 text-slate-500 shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 active:scale-95',
             compact ? 'h-7 w-7' : 'h-8 w-8'
           )}
         >
@@ -277,9 +284,14 @@ export function LeadsTable({
 
   if (leads.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-card border border-border bg-bg-surface py-16">
-        <SearchX className="mb-4 h-12 w-12 text-slate-600" />
-        <p className="text-lg font-medium text-slate-400">
+      <div
+        className={cn(
+          'flex flex-col items-center justify-center py-16',
+          !embedded && 'widget-card'
+        )}
+      >
+        <SearchX className="mb-4 h-12 w-12 text-indigo-300" />
+        <p className="text-lg font-bold text-slate-800">
           {emptyMessage ?? 'No leads match your filters'}
         </p>
         <p className="mt-1 text-sm text-slate-500">
@@ -294,17 +306,17 @@ export function LeadsTable({
   const cellPad = compact ? 'px-3 py-2.5' : 'px-4 py-3';
 
   return (
-    <div className="rounded-card border border-border bg-bg-surface">
+    <div className={cn('overflow-hidden', !embedded && 'widget-card')}>
       <div className="overflow-x-auto">
         <table className="w-max min-w-full">
           <thead>
-            <tr className="bg-bg-deep text-left">
+            <tr className="bg-white/55 text-left backdrop-blur">
               {columns.map((col) => (
                 <th
                   key={col.key}
                   style={{ minWidth: col.minWidth }}
                   className={cn(
-                    'whitespace-nowrap text-xs font-medium tracking-widest text-slate-400',
+                    'whitespace-nowrap text-xs font-bold uppercase tracking-widest text-slate-500',
                     compact ? 'px-3 py-2' : 'px-4 py-3'
                   )}
                 >
@@ -320,7 +332,20 @@ export function LeadsTable({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.2, delay: index * 0.02 }}
-                className="border-t border-border transition-colors hover:bg-bg-surface/30"
+                role={onView ? 'button' : undefined}
+                tabIndex={onView ? 0 : undefined}
+                onClick={() => onView?.(lead)}
+                onKeyDown={(e) => {
+                  if (!onView) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onView(lead);
+                  }
+                }}
+                className={cn(
+                  'border-t border-white/55 transition-colors hover:bg-white/45',
+                  onView && 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500/30'
+                )}
               >
                 {columns.map((col) => (
                   <td key={col.key} className={cn(cellPad, 'align-middle')}>

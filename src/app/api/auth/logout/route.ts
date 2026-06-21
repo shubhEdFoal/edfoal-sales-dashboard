@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server';
-import { AUTH_COOKIE_NAME } from '@/lib/auth/constants';
-
-export const dynamic = 'force-dynamic';
+import { DASHBOARD_AUTH_COOKIE } from '@/lib/auth/session';
 
 export async function POST() {
   const response = NextResponse.json({ ok: true });
-  response.cookies.set(AUTH_COOKIE_NAME, '', {
+
+  response.cookies.set(DASHBOARD_AUTH_COOKIE, '', {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
     sameSite: 'lax',
+    secure: process.env.NODE_ENV === 'production',
     path: '/',
     maxAge: 0,
   });

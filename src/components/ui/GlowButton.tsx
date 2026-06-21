@@ -13,9 +13,9 @@ interface GlowButtonProps {
 
 const variantStyles = {
   primary:
-    'bg-accent-blue text-white border-transparent hover:shadow-[0_0_20px_rgba(59,130,246,0.5)]',
+    'border-transparent bg-gradient-to-r from-indigo-600 to-violet-500 text-white shadow-lg shadow-indigo-600/20 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-indigo-600/25',
   ghost:
-    'bg-transparent text-slate-300 border-border hover:bg-bg-surface hover:text-white',
+    'border-white/60 bg-white/55 text-slate-700 shadow-sm backdrop-blur-md hover:-translate-y-0.5 hover:bg-white/80 hover:text-indigo-700 hover:shadow-lg hover:shadow-indigo-600/10',
   danger:
     'bg-accent-red/10 text-accent-red border-accent-red/30 hover:bg-accent-red/20',
 };
@@ -35,7 +35,7 @@ export function GlowButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'inline-flex items-center justify-center gap-2 rounded-btn border px-4 py-2 text-sm font-medium transition-all active:scale-95',
+        'inline-flex items-center justify-center gap-2 rounded-2xl border px-4 py-2 text-sm font-semibold transition-all duration-300 ease-in-out active:scale-95',
         variantStyles[variant],
         disabled && 'cursor-not-allowed opacity-50 active:scale-100 hover:shadow-none',
         className

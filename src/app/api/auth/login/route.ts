@@ -1,48 +1,86 @@
 import { NextResponse } from 'next/server';
-import { AUTH_COOKIE_NAME } from '@/lib/auth/constants';
-import { validateCredentials, isAuthConfigured } from '@/lib/auth/credentials';
-import { signAuthToken } from '@/lib/auth/jwt';
+import { DASHBOARD_AUTH_COOKIE, getAuthApiBaseUrl } from '@/lib/auth/session';
 
-export const dynamic = 'force-dynamic';
-
-const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
+interface LoginPayload {
+  email?: string;
+  password?: string;
+}
 
 export async function POST(req: Request) {
-  if (!isAuthConfigured()) {
+  let payload: LoginPayload;
+
+  try {
+    payload = (await req.json()) as LoginPayload;
+  } catch {
+    return NextResponse.json({ error: 'Invalid request body.' }, { status: 400 });
+  }
+
+  const email = payload.email?.trim();
+  const password = payload.password;
+
+  if (!email || !password) {
     return NextResponse.json(
-      { error: 'Auth is not configured. Set JWT_SECRET, AUTH_USERNAME, and AUTH_PASSWORD.' },
-      { status: 503 }
+      { error: 'Email and password are required.' },
+      { status: 400 }
     );
   }
 
-  let body: { username?: string; password?: string };
   try {
-    body = (await req.json()) as { username?: string; password?: string };
-  } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    const upstream = await fetch(`${getAuthApiBaseUrl()}/api/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+    });
+    const text = await upstream.text();
+    const contentType = upstream.headers.get('content-type') ?? 'application/json';
+    const body = parseJsonBody(text);
+
+    const response = new NextResponse(text, {
+      status: upstream.status,
+      headers: { 'content-type': contentType },
+    });
+
+    if (upstream.ok && body?.success !== false) {
+      response.cookies.set(DASHBOARD_AUTH_COOKIE, '1', {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7,
+      });
+      for (const cookie of getSetCookies(upstream.headers)) {
+        response.headers.append('set-cookie', cookie);
+      }
+    }
+
+    return response;
+  } catch (err) {
+    return NextResponse.json(
+      {
+        error:
+          err instanceof Error
+            ? err.message
+            : 'Unable to reach the authentication server.',
+      },
+      { status: 502 }
+    );
   }
-
-  const username = (body.username ?? '').trim();
-  const password = body.password ?? '';
-
-  if (!username || !password) {
-    return NextResponse.json({ error: 'Username and password are required.' }, { status: 400 });
-  }
-
-  if (!(await validateCredentials(username, password))) {
-    return NextResponse.json({ error: 'Invalid username or password.' }, { status: 401 });
-  }
-
-  const token = await signAuthToken(username);
-  const response = NextResponse.json({ ok: true, username });
-
-  response.cookies.set(AUTH_COOKIE_NAME, token, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    sameSite: 'lax',
-    path: '/',
-    maxAge: COOKIE_MAX_AGE,
-  });
-
-  return response;
 }
+
+function parseJsonBody(text: string): { success?: boolean } | null {
+  try {
+    return JSON.parse(text) as { success?: boolean };
+  } catch {
+    return null;
+  }
+}
+
+function getSetCookies(headers: Headers): string[] {
+  const withGetSetCookie = headers as Headers & { getSetCookie?: () => string[] };
+  const setCookies = withGetSetCookie.getSetCookie?.();
+  if (setCookies?.length) return setCookies;
+
+  const single = headers.get('set-cookie');
+  return single ? [single] : [];
+}
+

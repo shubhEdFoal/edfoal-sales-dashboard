@@ -39,7 +39,7 @@ export function CampaignInsights({ leadCount, responseRate }: CampaignInsightsPr
   const tags = [`n=${leadCount} leads`, `${responseRate}% response rate`];
 
   return (
-    <aside className="rounded-card border border-border bg-bg-surface p-6 lg:sticky lg:top-24 lg:self-start">
+    <aside className="widget-card p-6 lg:sticky lg:top-24 lg:self-start">
       <h2 className="mb-1 text-sm font-medium uppercase tracking-wider text-slate-400">
         AI Campaign Insights
       </h2>
@@ -47,13 +47,13 @@ export function CampaignInsights({ leadCount, responseRate }: CampaignInsightsPr
         {STATIC_INSIGHTS.header}
       </p>
 
-      <p className="mb-4 text-sm leading-relaxed text-slate-300">{STATIC_INSIGHTS.body}</p>
+      <p className="mb-4 text-sm leading-relaxed text-slate-600">{STATIC_INSIGHTS.body}</p>
 
       <div className="mb-5 flex flex-wrap gap-2">
         {tags.map((tag) => (
           <span
             key={tag}
-            className="rounded-full bg-bg-deep px-3 py-1 font-mono text-xs text-slate-400"
+            className="rounded-full border border-white/60 bg-white/55 px-3 py-1 font-mono text-xs font-semibold text-slate-500 backdrop-blur"
           >
             {tag}
           </span>
@@ -62,7 +62,7 @@ export function CampaignInsights({ leadCount, responseRate }: CampaignInsightsPr
 
       <ul className="mb-6 space-y-3">
         {STATIC_INSIGHTS.recommendations.map((rec) => (
-          <li key={rec.text} className="flex gap-3 text-sm text-slate-300">
+          <li key={rec.text} className="flex gap-3 text-sm text-slate-600">
             <rec.icon className={`mt-0.5 h-4 w-4 shrink-0 ${rec.color}`} />
             <span>{rec.text}</span>
           </li>

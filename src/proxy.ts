@@ -1,64 +1,47 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { AUTH_COOKIE_NAME } from '@/lib/auth/constants';
-import { verifyAuthToken } from '@/lib/auth/jwt';
+import { DASHBOARD_AUTH_COOKIE } from '@/lib/auth/session';
 
 const PUBLIC_PATHS = new Set(['/login']);
-const PUBLIC_API_PREFIXES = ['/api/auth/login'];
+const PUBLIC_API_PREFIXES = [
+  '/api/auth/login',
+  '/api/auth/logout',
+  '/api/auth/signup',
+  '/api/auth/verify-otp',
+];
+const PUBLIC_FILE_PATTERN = /\.(?:svg|png|jpg|jpeg|gif|webp|ico)$/;
 
-function isPublicPath(pathname: string): boolean {
+function isPublicPath(pathname: string) {
   if (PUBLIC_PATHS.has(pathname)) return true;
+  if (pathname.startsWith('/_next/')) return true;
+  if (PUBLIC_FILE_PATTERN.test(pathname)) return true;
   return PUBLIC_API_PREFIXES.some(
     (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)
   );
 }
 
-function isIngestPath(pathname: string): boolean {
+function isIngestPath(pathname: string) {
   return pathname === '/api/leads/ingest' || pathname.startsWith('/api/leads/ingest/');
 }
 
-function getToken(request: NextRequest): string | null {
-  const cookieToken = request.cookies.get(AUTH_COOKIE_NAME)?.value;
-  if (cookieToken) return cookieToken;
-
-  const authHeader = request.headers.get('authorization');
-  if (authHeader?.startsWith('Bearer ')) {
-    return authHeader.slice(7).trim();
-  }
-
-  return null;
-}
-
-export async function proxy(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const isAuthed = request.cookies.get(DASHBOARD_AUTH_COOKIE)?.value === '1';
 
-  if (isIngestPath(pathname)) {
-    return NextResponse.next();
-  }
-
-  const token = getToken(request);
-  const session = token ? await verifyAuthToken(token) : null;
-
-  if (pathname === '/login') {
-    if (session) {
+  if (isIngestPath(pathname) || isPublicPath(pathname)) {
+    if (pathname === '/login' && isAuthed) {
       return NextResponse.redirect(new URL('/', request.url));
     }
     return NextResponse.next();
   }
 
-  if (isPublicPath(pathname)) {
-    return NextResponse.next();
-  }
-
-  if (!session) {
+  if (!isAuthed) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const loginUrl = new URL('/login', request.url);
-    if (pathname !== '/') {
-      loginUrl.searchParams.set('from', pathname);
-    }
+    if (pathname !== '/') loginUrl.searchParams.set('from', pathname);
     return NextResponse.redirect(loginUrl);
   }
 

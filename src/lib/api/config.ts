@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE = 'https://lateritious-lackadaisically-jalen.ngrok-free.dev';
+const DEFAULT_API_BASE = 'http://localhost:8000';
 
 export function getScraperApiBase(): string {
   const resultsUrl = process.env.RESULTS_API_URL?.trim();
@@ -26,10 +26,16 @@ export function getScrapeApiUrl(): string {
   return process.env.SCRAPE_API_URL?.trim() || `${getScraperApiBase()}/api/scrape`;
 }
 
-export function scraperApiHeaders(extra?: Record<string, string>): Record<string, string> {
+export function scraperApiHeaders(
+  extra?: Record<string, string>,
+  backendCookie?: string | null
+): Record<string, string> {
   const headers: Record<string, string> = { ...extra };
   if (getScraperApiBase().includes('ngrok')) {
     headers['ngrok-skip-browser-warning'] = 'true';
+  }
+  if (backendCookie) {
+    headers.Cookie = backendCookie;
   }
   return headers;
 }
