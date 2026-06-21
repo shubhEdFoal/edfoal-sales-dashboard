@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { getScrapeApiUrl, scraperApiHeaders } from '@/lib/api/config';
+import { getStoredBackendCookie } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,7 +69,10 @@ export async function POST(req: Request) {
   try {
     const res = await fetch(getScrapeApiUrl(), {
       method: 'POST',
-      headers: scraperApiHeaders({ 'Content-Type': 'application/json' }),
+      headers: scraperApiHeaders(
+        { 'Content-Type': 'application/json' },
+        getStoredBackendCookie(req)
+      ),
       body: JSON.stringify(payload),
       cache: 'no-store',
     });

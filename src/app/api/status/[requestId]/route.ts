@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import { fetchLeadGenerationRequest } from '@/lib/api/fetch-status';
+import { fetchLeadGenerationRequestWithAuth } from '@/lib/api/fetch-status';
+import { getStoredBackendCookie } from '@/lib/auth/session';
 
 export const dynamic = 'force-dynamic';
 
@@ -7,7 +8,7 @@ interface RouteContext {
   params: Promise<{ requestId: string }>;
 }
 
-export async function GET(_req: Request, context: RouteContext) {
+export async function GET(req: Request, context: RouteContext) {
   const { requestId } = await context.params;
 
   if (!requestId?.trim()) {
@@ -15,7 +16,10 @@ export async function GET(_req: Request, context: RouteContext) {
   }
 
   try {
-    const request = await fetchLeadGenerationRequest(requestId.trim());
+    const request = await fetchLeadGenerationRequestWithAuth(
+      requestId.trim(),
+      getStoredBackendCookie(req)
+    );
     return NextResponse.json(
       { success: true, request },
       { headers: { 'Cache-Control': 'no-store' } }

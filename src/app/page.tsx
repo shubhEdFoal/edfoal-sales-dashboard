@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Bell, Download, RefreshCw, Search, Sparkles } from 'lucide-react';
+import { Download, RefreshCw, Search, Sparkles } from 'lucide-react';
 import { AnalyticsView } from '@/components/analytics/AnalyticsView';
 import { GenerateLeadModal } from '@/components/dashboard/GenerateLeadModal';
 import {
@@ -15,6 +15,7 @@ import { LeadsTable } from '@/components/dashboard/LeadsTable';
 import { Header, type NavLink } from '@/components/layout/Header';
 import { GlowButton } from '@/components/ui/GlowButton';
 import type { Lead } from '@/data/leads';
+import { DASHBOARD_USER_NAME_STORAGE_KEY } from '@/lib/auth/display-name';
 import { downloadLeadsCSV } from '@/lib/export-csv';
 import { computeKPI } from '@/lib/sheets/kpi';
 import type { LeadKPI } from '@/lib/sheets/kpi';
@@ -51,6 +52,7 @@ export default function Home() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [generateLeadOpen, setGenerateLeadOpen] = useState(false);
   const [leadsPage, setLeadsPage] = useState(1);
+  const [displayName, setDisplayName] = useState('EdFoal');
 
   const applyLeadsResponse = useCallback((data: LeadsApiResponse) => {
     setLeads(data.leads);
@@ -118,6 +120,18 @@ export default function Home() {
     return () => window.clearTimeout(timer);
   }, [loadLeads]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const storedName = window.localStorage
+        .getItem(DASHBOARD_USER_NAME_STORAGE_KEY)
+        ?.trim();
+
+      if (storedName) setDisplayName(storedName);
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
       const matchesSearch =
@@ -165,14 +179,14 @@ export default function Home() {
 
   return (
     <div className="mesh-bg flex min-h-screen">
-      <Header activeNav={activeNav} onNavChange={setActiveNav} />
+      <Header activeNav={activeNav} displayName={displayName} onNavChange={setActiveNav} />
 
       <div className="min-w-0 flex-1">
         <main className="min-h-screen overflow-auto px-4 py-6 sm:px-6 lg:px-10">
           <section className="mb-8 flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
             <div>
               <p className="mb-2 text-sm font-semibold uppercase tracking-[0.24em] text-indigo-600">
-                Welcome back, EdFoal
+                Welcome back, {displayName}
               </p>
               <h1 className="text-4xl font-extrabold tracking-tight text-slate-950 sm:text-5xl">
                 {PAGE_TITLE[activeNav]}
@@ -192,13 +206,6 @@ export default function Home() {
                   className="min-w-0 flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-slate-400"
                 />
               </label>
-              <button
-                type="button"
-                aria-label="Notifications"
-                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-white/60 bg-white/65 text-slate-500 shadow-sm backdrop-blur-md transition-all hover:-translate-y-0.5 hover:text-indigo-600 hover:shadow-lg hover:shadow-indigo-600/10"
-              >
-                <Bell className="h-5 w-5" />
-              </button>
               <GlowButton
                 variant="ghost"
                 icon={RefreshCw}

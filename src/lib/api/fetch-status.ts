@@ -10,9 +10,19 @@ export async function fetchLeadGenerationStatusList(): Promise<{
   running: number;
   requests: LeadGenerationRequest[];
 }> {
+  return fetchLeadGenerationStatusListWithAuth(null);
+}
+
+export async function fetchLeadGenerationStatusListWithAuth(
+  backendCookie?: string | null
+): Promise<{
+  total: number;
+  running: number;
+  requests: LeadGenerationRequest[];
+}> {
   const res = await fetch(getStatusApiUrl(), {
     cache: 'no-store',
-    headers: scraperApiHeaders(),
+    headers: scraperApiHeaders(undefined, backendCookie),
   });
 
   if (!res.ok) {
@@ -35,10 +45,17 @@ export async function fetchLeadGenerationStatusList(): Promise<{
 export async function fetchLeadGenerationRequest(
   requestId: string
 ): Promise<LeadGenerationRequest> {
+  return fetchLeadGenerationRequestWithAuth(requestId, null);
+}
+
+export async function fetchLeadGenerationRequestWithAuth(
+  requestId: string,
+  backendCookie?: string | null
+): Promise<LeadGenerationRequest> {
   const base = getStatusApiUrl().replace(/\/$/, '');
   const res = await fetch(`${base}/${encodeURIComponent(requestId)}`, {
     cache: 'no-store',
-    headers: scraperApiHeaders(),
+    headers: scraperApiHeaders(undefined, backendCookie),
   });
 
   if (!res.ok) {

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { fetchLeadsFromResultsApi } from '@/lib/api/fetch-results';
+import { getStoredBackendCookie } from '@/lib/auth/session';
 import { computeFunnel, computeKPI } from '@/lib/sheets/kpi';
 
 export const dynamic = 'force-dynamic';
@@ -19,9 +20,9 @@ function leadsResponse(leads: Awaited<ReturnType<typeof fetchLeadsFromResultsApi
   );
 }
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const leads = await fetchLeadsFromResultsApi();
+    const leads = await fetchLeadsFromResultsApi(getStoredBackendCookie(req));
     return leadsResponse(leads);
   } catch (error) {
     const message =

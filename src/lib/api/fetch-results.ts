@@ -3,12 +3,12 @@ import { getResultsApiUrl, scraperApiHeaders } from '@/lib/api/config';
 import type { ApiResultsResponse } from '@/lib/api/types';
 import type { Lead } from '@/data/leads';
 
-export async function fetchLeadsFromResultsApi(): Promise<Lead[]> {
+export async function fetchLeadsFromResultsApi(backendCookie?: string | null): Promise<Lead[]> {
   const baseUrl = getResultsApiUrl();
 
   const res = await fetch(baseUrl, {
     cache: 'no-store',
-    headers: scraperApiHeaders(),
+    headers: scraperApiHeaders(undefined, backendCookie),
   });
 
   if (!res.ok) {

@@ -12,6 +12,7 @@ interface LeadsTableProps {
   leads: Lead[];
   emptyMessage?: string;
   compact?: boolean;
+  embedded?: boolean;
   onView?: (lead: Lead) => void;
   pagination?: {
     page: number;
@@ -35,6 +36,7 @@ function CellLink({ href, label }: { href: string; label: string }) {
       href={href}
       target="_blank"
       rel="noreferrer"
+      onClick={(e) => e.stopPropagation()}
       className="inline-flex max-w-[220px] items-center gap-1 truncate text-xs font-semibold text-indigo-600 hover:underline"
       title={label}
     >
@@ -86,6 +88,7 @@ const TABLE_COLUMNS: ColumnDef[] = [
       return (
         <a
           href={`mailto:${primary}`}
+          onClick={(e) => e.stopPropagation()}
           className="inline-flex max-w-[220px] items-center gap-1 truncate font-mono text-xs text-slate-600 hover:text-indigo-600"
         >
           {emails.length > 1 ? `${primary} (+${emails.length - 1})` : primary}
@@ -249,6 +252,7 @@ export function LeadsTable({
   leads,
   emptyMessage,
   compact = false,
+  embedded = false,
   onView,
   pagination,
 }: LeadsTableProps) {
@@ -263,7 +267,10 @@ export function LeadsTable({
           type="button"
           aria-label="View details"
           title="View details"
-          onClick={() => onView?.(lead)}
+          onClick={(e) => {
+            e.stopPropagation();
+            onView?.(lead);
+          }}
           className={cn(
             'flex items-center justify-center rounded-2xl border border-white/60 bg-white/50 text-slate-500 shadow-sm backdrop-blur transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:bg-indigo-50 hover:text-indigo-600 active:scale-95',
             compact ? 'h-7 w-7' : 'h-8 w-8'
@@ -277,7 +284,12 @@ export function LeadsTable({
 
   if (leads.length === 0) {
     return (
-      <div className="widget-card flex flex-col items-center justify-center py-16">
+      <div
+        className={cn(
+          'flex flex-col items-center justify-center py-16',
+          !embedded && 'widget-card'
+        )}
+      >
         <SearchX className="mb-4 h-12 w-12 text-indigo-300" />
         <p className="text-lg font-bold text-slate-800">
           {emptyMessage ?? 'No leads match your filters'}
@@ -294,7 +306,7 @@ export function LeadsTable({
   const cellPad = compact ? 'px-3 py-2.5' : 'px-4 py-3';
 
   return (
-    <div className="widget-card overflow-hidden">
+    <div className={cn('overflow-hidden', !embedded && 'widget-card')}>
       <div className="overflow-x-auto">
         <table className="w-max min-w-full">
           <thead>
@@ -320,7 +332,20 @@ export function LeadsTable({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ duration: 0.2, delay: index * 0.02 }}
-                className="border-t border-white/55 transition-colors hover:bg-white/45"
+                role={onView ? 'button' : undefined}
+                tabIndex={onView ? 0 : undefined}
+                onClick={() => onView?.(lead)}
+                onKeyDown={(e) => {
+                  if (!onView) return;
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    onView(lead);
+                  }
+                }}
+                className={cn(
+                  'border-t border-white/55 transition-colors hover:bg-white/45',
+                  onView && 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-inset focus:ring-indigo-500/30'
+                )}
               >
                 {columns.map((col) => (
                   <td key={col.key} className={cn(cellPad, 'align-middle')}>

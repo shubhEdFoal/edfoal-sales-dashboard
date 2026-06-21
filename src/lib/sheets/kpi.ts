@@ -11,12 +11,12 @@ export interface LeadKPI {
 
 export function computeKPI(leads: Lead[]): LeadKPI {
   const totalLeads = leads.length;
-  const emailsSent = leads.filter((l) => l.status !== 'QUALIFIED').length;
-  const responses = leads.filter((l) => l.responded).length;
-  const meetingsBooked = leads.filter((l) => l.status === 'MEETING_BOOKED').length;
+  const emailsSent = leads.filter((l) => isSent(l.mailStatus)).length;
+  const responses = leads.filter((l) => isYes(l.repliedByUs)).length;
+  const meetingsBooked = leads.filter((l) => isYes(l.schedulingSent)).length;
   const qualified = leads.filter((l) => l.status === 'QUALIFIED').length;
   const responseRate =
-    totalLeads > 0 ? Math.round((responses / totalLeads) * 100) : 0;
+    emailsSent > 0 ? Math.round((responses / emailsSent) * 100) : 0;
 
   return {
     totalLeads,
@@ -26,6 +26,15 @@ export function computeKPI(leads: Lead[]): LeadKPI {
     qualified,
     responseRate,
   };
+}
+
+function isSent(value: string | null | undefined) {
+  return value?.trim().toLowerCase() === 'sent';
+}
+
+function isYes(value: string | null | undefined) {
+  const normalized = value?.trim().toLowerCase();
+  return normalized === 'yes' || normalized === 'true' || normalized === '1';
 }
 
 export interface FunnelStage {

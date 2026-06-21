@@ -230,7 +230,7 @@ export function GenerateLeadModal({
                       list="edfoal-icp-types"
                       value={form.businessType}
                       onChange={(e) => update('businessType', e.target.value)}
-                      placeholder="SaaS Startup, FinTech, EdTech..."
+                      placeholder="Enter Target Company Type"
                       className={FIELD_CLS}
                       autoFocus
                     />
@@ -246,7 +246,7 @@ export function GenerateLeadModal({
                       list="edfoal-icp-states"
                       value={form.state}
                       onChange={(e) => update('state', e.target.value)}
-                      placeholder="Delhi, Mumbai, London..."
+                      placeholder="Enter State / City"
                       className={FIELD_CLS}
                     />
                     <datalist id="edfoal-icp-states">
@@ -261,7 +261,7 @@ export function GenerateLeadModal({
                       list="edfoal-icp-countries"
                       value={form.country}
                       onChange={(e) => update('country', e.target.value)}
-                      placeholder="India, USA, UK..."
+                      placeholder="Enter Country"
                       className={FIELD_CLS}
                     />
                     <datalist id="edfoal-icp-countries">
@@ -276,6 +276,7 @@ export function GenerateLeadModal({
                       min={1}
                       value={form.count}
                       onChange={(e) => update('count', e.target.value)}
+                      placeholder="Enter Number of Leads"
                       className={FIELD_CLS}
                     />
                   </FieldLabel>
