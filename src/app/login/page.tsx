@@ -269,7 +269,7 @@ function LoginForm() {
 
                 {showSignupPrompt && (
                   <div className="rounded-2xl border border-indigo-200 bg-indigo-50/80 px-4 py-3 text-sm text-indigo-700">
-                    Account nahi mila. Pehle sign up karo, OTP verify karo, phir login karo.
+                    Account not found. Please sign up, verify your OTP, then sign in.
                     <button
                       type="button"
                       onClick={() => switchMode('signup')}
