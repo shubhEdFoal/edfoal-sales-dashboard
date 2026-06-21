@@ -1,7 +1,8 @@
 export const DASHBOARD_AUTH_COOKIE = 'edfoal_dashboard_session';
+const DEFAULT_AUTH_API_BASE = 'https://lateritious-lackadaisically-jalen.ngrok-free.dev';
 
 export function getAuthApiBaseUrl() {
-  return process.env.AUTH_API_BASE_URL?.trim() || 'http://localhost:8000';
+  return process.env.AUTH_API_BASE_URL?.trim() || DEFAULT_AUTH_API_BASE;
 }
 
 export function getStoredBackendCookie(req: Request) {
