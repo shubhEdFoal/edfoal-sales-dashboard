@@ -1,4 +1,4 @@
-const DEFAULT_API_BASE = 'http://localhost:8000';
+const DEFAULT_API_BASE = 'https://lateritious-lackadaisically-jalen.ngrok-free.dev';
 
 export function getScraperApiBase(): string {
   const resultsUrl = process.env.RESULTS_API_URL?.trim();
